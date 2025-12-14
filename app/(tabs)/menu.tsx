@@ -1,0 +1,797 @@
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  Alert,
+  Modal,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { colors } from '@/constants/theme';
+import { api, Menu, getUser, User } from '@/utils/api';
+
+export default function MenuScreen() {
+  const [menus, setMenus] = useState<Menu[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [selectedMenu, setSelectedMenu] = useState<Menu | null>(null);
+  const [orderModalVisible, setOrderModalVisible] = useState(false);
+  const [orderItems, setOrderItems] = useState<Array<{
+    mealType: 'full' | 'half' | 'riceOnly';
+    sabji?: string;
+    quantity: number;
+  }>>([]);
+  const [userId, setUserId] = useState<string>('');
+
+  useFocusEffect(
+    React.useCallback(() => {
+      loadData();
+    }, [])
+  );
+
+  const loadData = async () => {
+    try {
+      const user = await getUser();
+      if (user && user.id) {
+        setUserId(user.id);
+        await loadMenus();
+      }
+    } catch (error) {
+      console.error('Error loading data:', error);
+    }
+  };
+
+  const loadMenus = async () => {
+    setLoading(true);
+    try {
+      const response = await api.getMenus();
+      // Filter menus for today and future dates
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const availableMenus = response.menus.filter((menu) => {
+        const menuDate = new Date(menu.date);
+        menuDate.setHours(0, 0, 0, 0);
+        return menuDate >= today;
+      });
+      setMenus(availableMenus);
+    } catch (error: any) {
+      console.error('Error loading menus:', error);
+      if (error.message && !error.message.includes('Server error')) {
+        Alert.alert('Error', error.message || 'Failed to load menus');
+      } else {
+        setMenus([]);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOrderMenu = (menu: Menu) => {
+    if (!menu.sabjis || menu.sabjis.length === 0) {
+      Alert.alert('Error', 'This menu has no sabjis available');
+      return;
+    }
+    
+    setSelectedMenu(menu);
+    setOrderItems([{
+      mealType: 'full',
+      sabji: menu.sabjis[0],
+      quantity: 1,
+    }]);
+    setOrderModalVisible(true);
+  };
+
+  const handleAddOrderItem = () => {
+    if (selectedMenu && selectedMenu.sabjis && selectedMenu.sabjis.length > 0) {
+      setOrderItems([...orderItems, {
+        mealType: 'full',
+        sabji: selectedMenu.sabjis[0],
+        quantity: 1,
+      }]);
+    }
+  };
+
+  const handleRemoveOrderItem = (index: number) => {
+    if (orderItems.length > 1) {
+      setOrderItems(orderItems.filter((_, i) => i !== index));
+    }
+  };
+
+  const handleOrderItemChange = (index: number, field: string, value: any) => {
+    const newItems = [...orderItems];
+    newItems[index] = { ...newItems[index], [field]: value };
+    
+    // If meal type changes to riceOnly, clear sabji
+    if (field === 'mealType' && value === 'riceOnly') {
+      delete newItems[index].sabji;
+    }
+    // If meal type changes from riceOnly to full/half, set default sabji
+    if (field === 'mealType' && value !== 'riceOnly' && !newItems[index].sabji && selectedMenu) {
+      newItems[index].sabji = selectedMenu.sabjis[0];
+    }
+    
+    setOrderItems(newItems);
+  };
+
+  const calculateTotal = () => {
+    if (!selectedMenu) return 0;
+    return orderItems.reduce((total, item) => {
+      const price = selectedMenu.prices[item.mealType];
+      return total + (price * item.quantity);
+    }, 0);
+  };
+
+  const handlePlaceOrder = async () => {
+    if (!selectedMenu || !userId) {
+      Alert.alert('Error', 'Missing required information');
+      return;
+    }
+
+    // Validate items array
+    if (!orderItems || orderItems.length === 0) {
+      Alert.alert('Error', 'Please add at least one item to your order');
+      return;
+    }
+
+    // Validate all items
+    for (const item of orderItems) {
+      if (item.quantity < 1) {
+        Alert.alert('Error', 'Quantity must be at least 1');
+        return;
+      }
+      if (item.mealType !== 'riceOnly' && !item.sabji) {
+        Alert.alert('Error', 'Please select a sabji for all items');
+        return;
+      }
+      if (item.mealType !== 'riceOnly' && item.sabji && !selectedMenu.sabjis.includes(item.sabji)) {
+        Alert.alert('Error', `Invalid sabji: ${item.sabji}`);
+        return;
+      }
+    }
+
+    setLoading(true);
+    try {
+      // Format items for API - remove sabji for riceOnly items
+      const formattedItems = orderItems.map(item => {
+        const formattedItem: any = {
+          mealType: item.mealType,
+          quantity: item.quantity,
+        };
+        
+        // Only include sabji if meal type is not riceOnly
+        if (item.mealType !== 'riceOnly' && item.sabji) {
+          formattedItem.sabji = item.sabji;
+        }
+        
+        return formattedItem;
+      });
+
+      console.log('📦 [handlePlaceOrder] Sending order:', {
+        userId,
+        menuId: selectedMenu._id,
+        items: formattedItems,
+      });
+
+      await api.placeOrder({
+        userId,
+        menuId: selectedMenu._id,
+        items: formattedItems,
+      });
+
+      Alert.alert('Success', 'Order placed successfully!');
+      setOrderModalVisible(false);
+      setSelectedMenu(null);
+      setOrderItems([]);
+    } catch (error: any) {
+      console.error('❌ [handlePlaceOrder] Error:', error);
+      Alert.alert('Error', error.message || 'Failed to place order');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      weekday: 'short',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
+  const getProviderName = (menu: Menu) => {
+    if (typeof menu.providerId === 'object' && menu.providerId) {
+      return (menu.providerId as any).name || 'Provider';
+    }
+    return 'Provider';
+  };
+
+  return (
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Available Menus</Text>
+      </View>
+
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
+        {loading && menus.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.loadingText}>Loading menus...</Text>
+          </View>
+        ) : menus.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Ionicons name="restaurant-outline" size={64} color={colors.muted} />
+            <Text style={styles.emptyText}>No menus available</Text>
+            <Text style={styles.emptySubtext}>Check back later for new menus</Text>
+          </View>
+        ) : (
+          <View style={styles.menuList}>
+            {menus.map((menu) => (
+              <TouchableOpacity
+                key={menu._id}
+                style={styles.menuCard}
+                onPress={() => handleOrderMenu(menu)}
+              >
+                <View style={styles.menuHeader}>
+                  <View>
+                    <Text style={styles.providerName}>{getProviderName(menu)}</Text>
+                    <Text style={styles.menuDate}>{formatDate(menu.date)}</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={24} color={colors.muted} />
+                </View>
+
+                <View style={styles.sabjisContainer}>
+                  <Text style={styles.sabjisTitle}>Available Sabjis:</Text>
+                  <View style={styles.sabjisList}>
+                    {menu.sabjis.map((sabzi, index) => (
+                      <View key={index} style={styles.sabziItem}>
+                        <Text style={styles.sabziText}>{sabzi}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+
+                <View style={styles.pricesContainer}>
+                  <Text style={styles.pricesTitle}>Prices:</Text>
+                  <View style={styles.pricesGrid}>
+                    <View style={styles.priceItem}>
+                      <Text style={styles.priceLabel}>Full</Text>
+                      <Text style={styles.priceValue}>₹{menu.prices.full}</Text>
+                    </View>
+                    <View style={styles.priceItem}>
+                      <Text style={styles.priceLabel}>Half</Text>
+                      <Text style={styles.priceValue}>₹{menu.prices.half}</Text>
+                    </View>
+                    <View style={styles.priceItem}>
+                      <Text style={styles.priceLabel}>Rice Only</Text>
+                      <Text style={styles.priceValue}>₹{menu.prices.riceOnly}</Text>
+                    </View>
+                  </View>
+                </View>
+
+                <TouchableOpacity style={styles.orderButton}>
+                  <Text style={styles.orderButtonText}>Place Order</Text>
+                </TouchableOpacity>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+      </ScrollView>
+
+      <Modal
+        visible={orderModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setOrderModalVisible(false)}
+      >
+        <SafeAreaView style={styles.modalOverlay} edges={['bottom']}>
+          <View style={styles.modalBackdrop}>
+            <TouchableOpacity
+              style={StyleSheet.absoluteFill}
+              activeOpacity={1}
+              onPress={() => setOrderModalVisible(false)}
+            />
+          </View>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Place Order</Text>
+              <TouchableOpacity onPress={() => setOrderModalVisible(false)}>
+                <Ionicons name="close" size={24} color={colors.text} />
+              </TouchableOpacity>
+            </View>
+
+            {selectedMenu && (
+              <>
+                <ScrollView style={styles.modalBody} contentContainerStyle={styles.modalBodyContent}>
+                  <View style={styles.menuInfoCard}>
+                    <Text style={styles.menuInfoText}>
+                      {getProviderName(selectedMenu)} - {formatDate(selectedMenu.date)}
+                    </Text>
+                  </View>
+
+                  <Text style={styles.sectionTitle}>Order Items</Text>
+                  {orderItems.map((item, index) => (
+                    <View key={index} style={styles.orderItemCard}>
+                      <View style={styles.orderItemHeader}>
+                        <Text style={styles.orderItemNumber}>Item {index + 1}</Text>
+                        {orderItems.length > 1 && (
+                          <TouchableOpacity
+                            onPress={() => handleRemoveOrderItem(index)}
+                            style={styles.removeItemButton}
+                          >
+                            <Ionicons name="close-circle" size={20} color={colors.danger} />
+                          </TouchableOpacity>
+                        )}
+                      </View>
+
+                      <View style={styles.orderItemRow}>
+                        <Text style={styles.orderItemLabel}>Meal Type:</Text>
+                        <View style={styles.mealTypeButtons}>
+                          {(['full', 'half', 'riceOnly'] as const).map((type) => (
+                            <TouchableOpacity
+                              key={type}
+                              style={[
+                                styles.mealTypeButton,
+                                item.mealType === type && styles.mealTypeButtonActive,
+                              ]}
+                              onPress={() => handleOrderItemChange(index, 'mealType', type)}
+                            >
+                              <Text
+                                style={[
+                                  styles.mealTypeButtonText,
+                                  item.mealType === type && styles.mealTypeButtonTextActive,
+                                ]}
+                              >
+                                {type === 'riceOnly' ? 'Rice Only' : type.charAt(0).toUpperCase() + type.slice(1)}
+                              </Text>
+                            </TouchableOpacity>
+                          ))}
+                        </View>
+                      </View>
+
+                      {item.mealType !== 'riceOnly' && (
+                        <View style={styles.orderItemRow}>
+                          <Text style={styles.orderItemLabel}>Sabji:</Text>
+                          <View style={styles.sabjiButtons}>
+                            {selectedMenu.sabjis.map((sabji) => (
+                              <TouchableOpacity
+                                key={sabji}
+                                style={[
+                                  styles.sabjiButton,
+                                  item.sabji === sabji && styles.sabjiButtonActive,
+                                ]}
+                                onPress={() => handleOrderItemChange(index, 'sabji', sabji)}
+                              >
+                                <Text
+                                  style={[
+                                    styles.sabjiButtonText,
+                                    item.sabji === sabji && styles.sabjiButtonTextActive,
+                                  ]}
+                                >
+                                  {sabji}
+                                </Text>
+                              </TouchableOpacity>
+                            ))}
+                          </View>
+                        </View>
+                      )}
+
+                      <View style={styles.orderItemRow}>
+                        <Text style={styles.orderItemLabel}>Quantity:</Text>
+                        <View style={styles.quantityRow}>
+                          <View style={styles.quantityControls}>
+                            <TouchableOpacity
+                              style={styles.quantityButton}
+                              onPress={() => {
+                                if (item.quantity > 1) {
+                                  handleOrderItemChange(index, 'quantity', item.quantity - 1);
+                                }
+                              }}
+                            >
+                              <Ionicons name="remove" size={20} color={colors.text} />
+                            </TouchableOpacity>
+                            <Text style={styles.quantityText}>{item.quantity}</Text>
+                            <TouchableOpacity
+                              style={styles.quantityButton}
+                              onPress={() => handleOrderItemChange(index, 'quantity', item.quantity + 1)}
+                            >
+                              <Ionicons name="add" size={20} color={colors.text} />
+                            </TouchableOpacity>
+                          </View>
+                          <Text style={styles.itemPrice}>
+                            ₹{selectedMenu.prices[item.mealType] * item.quantity}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+                  ))}
+
+                  <TouchableOpacity
+                    style={styles.addItemButton}
+                    onPress={handleAddOrderItem}
+                  >
+                    <Ionicons name="add-circle" size={24} color={colors.brand} />
+                    <Text style={styles.addItemText}>Add Another Item</Text>
+                  </TouchableOpacity>
+                </ScrollView>
+
+                <View style={styles.modalFooter}>
+                  <View style={styles.totalContainer}>
+                    <Text style={styles.totalLabel}>Total:</Text>
+                    <Text style={styles.totalAmount}>₹{calculateTotal()}</Text>
+                  </View>
+                  <TouchableOpacity
+                    style={[styles.placeOrderButton, loading && styles.buttonDisabled]}
+                    onPress={handlePlaceOrder}
+                    disabled={loading}
+                  >
+                    <Text style={styles.placeOrderButtonText}>
+                      {loading ? 'Placing Order...' : 'Place Order'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
+          </View>
+        </SafeAreaView>
+      </Modal>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.bg,
+  },
+  header: {
+    padding: 16,
+    paddingTop: 8,
+    backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.muted,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: colors.text,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  content: {
+    padding: 16,
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: colors.text,
+  },
+  emptyText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text,
+    marginTop: 16,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: colors.muted,
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  menuList: {
+    gap: 16,
+  },
+  menuCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  menuHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.muted,
+  },
+  providerName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: colors.brand,
+    marginBottom: 4,
+  },
+  menuDate: {
+    fontSize: 14,
+    color: colors.muted,
+  },
+  sabjisContainer: {
+    marginBottom: 12,
+  },
+  sabjisTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 8,
+  },
+  sabjisList: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  sabziItem: {
+    backgroundColor: colors.bg,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  sabziText: {
+    fontSize: 14,
+    color: colors.text,
+  },
+  pricesContainer: {
+    marginBottom: 12,
+  },
+  pricesTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 8,
+  },
+  pricesGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  priceItem: {
+    flex: 1,
+    backgroundColor: colors.bg,
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  priceLabel: {
+    fontSize: 12,
+    color: colors.muted,
+    marginBottom: 4,
+  },
+  priceValue: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: colors.brand,
+  },
+  orderButton: {
+    backgroundColor: colors.brand,
+    borderRadius: 10,
+    padding: 14,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  orderButtonText: {
+    color: colors.surface,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  modalBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '90%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.muted,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: colors.text,
+  },
+  modalBody: {
+    maxHeight: 500,
+  },
+  modalBodyContent: {
+    padding: 20,
+  },
+  menuInfoCard: {
+    backgroundColor: colors.bg,
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 20,
+  },
+  menuInfoText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: colors.text,
+    marginBottom: 12,
+  },
+  orderItemCard: {
+    backgroundColor: colors.bg,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+  },
+  orderItemHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  orderItemNumber: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: colors.text,
+  },
+  removeItemButton: {
+    padding: 4,
+  },
+  orderItemRow: {
+    marginBottom: 12,
+  },
+  orderItemLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 8,
+  },
+  mealTypeButtons: {
+    flexDirection: 'row',
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+  mealTypeButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.muted,
+    backgroundColor: colors.surface,
+  },
+  mealTypeButtonActive: {
+    backgroundColor: colors.brand,
+    borderColor: colors.brand,
+  },
+  mealTypeButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  mealTypeButtonTextActive: {
+    color: colors.surface,
+  },
+  sabjiButtons: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  sabjiButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.muted,
+    backgroundColor: colors.surface,
+  },
+  sabjiButtonActive: {
+    backgroundColor: colors.accent,
+    borderColor: colors.accent,
+  },
+  sabjiButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  sabjiButtonTextActive: {
+    color: colors.surface,
+  },
+  quantityRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    flex: 1,
+  },
+  quantityControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  quantityButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.bg,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  quantityText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: colors.text,
+    minWidth: 30,
+    textAlign: 'center',
+  },
+  itemPrice: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: colors.brand,
+  },
+  addItemButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    padding: 12,
+    marginTop: 8,
+  },
+  addItemText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.brand,
+  },
+  modalFooter: {
+    padding: 20,
+    borderTopWidth: 1,
+    borderTopColor: colors.muted,
+  },
+  totalContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  totalLabel: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: colors.text,
+  },
+  totalAmount: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: colors.brand,
+  },
+  placeOrderButton: {
+    backgroundColor: colors.brand,
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+  },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
+  placeOrderButtonText: {
+    color: colors.surface,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+});
