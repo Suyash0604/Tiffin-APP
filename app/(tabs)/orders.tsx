@@ -1,20 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import { colors } from '@/constants/theme';
+import { api, getUser, Order } from '@/utils/api';
+import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from 'expo-router';
+import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
   Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { colors } from '@/constants/theme';
-import { api, Order, getUser } from '@/utils/api';
 
 export default function OrdersScreen() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
+  const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
 
   useFocusEffect(
     React.useCallback(() => {
@@ -44,7 +46,8 @@ export default function OrdersScreen() {
     }
   };
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return 'N/A';
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
       month: 'short',
@@ -52,6 +55,16 @@ export default function OrdersScreen() {
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
+    });
+  };
+
+  const formatMenuDate = (dateString?: string) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
     });
   };
 
@@ -65,15 +78,23 @@ export default function OrdersScreen() {
   const getMenuDate = (order: Order) => {
     if (typeof order.menuId === 'object' && order.menuId) {
       const menu = order.menuId as any;
-      if (menu.date) {
-        return new Date(menu.date).toLocaleDateString('en-US', {
-          month: 'short',
-          day: 'numeric',
-          year: 'numeric',
-        });
+      if (menu && menu.date) {
+        return formatMenuDate(menu.date);
       }
     }
     return 'N/A';
+  };
+
+  const toggleOrder = (orderId: string) => {
+    setExpandedOrders(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(orderId)) {
+        newSet.delete(orderId);
+      } else {
+        newSet.add(orderId);
+      }
+      return newSet;
+    });
   };
 
   return (
@@ -95,83 +116,108 @@ export default function OrdersScreen() {
           </View>
         ) : (
           <View style={styles.ordersList}>
-            {orders.map((order) => (
-              <View key={order._id} style={styles.orderCard}>
-                <View style={styles.orderHeader}>
-                  <View style={styles.orderHeaderLeft}>
-                    <View style={styles.orderIdContainer}>
-                      <Ionicons name="receipt" size={20} color={colors.brand} />
-                      <Text style={styles.orderId}>Order #{order._id.slice(-6)}</Text>
+            {orders.map((order) => {
+              const isExpanded = expandedOrders.has(order._id);
+              return (
+                <View key={order._id} style={styles.orderCard}>
+                  <TouchableOpacity 
+                    style={styles.orderHeader}
+                    onPress={() => toggleOrder(order._id)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.orderHeaderLeft}>
+                      <View style={styles.orderIdContainer}>
+                        <Ionicons name="restaurant" size={20} color={colors.brand} />
+                        <Text style={styles.orderId}>{getProviderName(order)}</Text>
+                      </View>
+                      <View style={styles.dateContainer}>
+                        <Ionicons name="time-outline" size={14} color={colors.muted} />
+                        <Text style={styles.orderDate}>
+                          {formatDate(order.orderDate || order.createdAt)}
+                        </Text>
+                      </View>
+                      <View style={styles.summaryRow}>
+                        <Text style={styles.summaryText}>
+                          {order.items.length} item{order.items.length !== 1 ? 's' : ''} • ₹{order.grandTotal}
+                        </Text>
+                      </View>
                     </View>
-                    <View style={styles.dateContainer}>
-                      <Ionicons name="time-outline" size={14} color={colors.muted} />
-                      <Text style={styles.orderDate}>{formatDate(order.createdAt || '')}</Text>
-                    </View>
-                  </View>
-                </View>
+                    <Ionicons 
+                      name={isExpanded ? 'chevron-up' : 'chevron-down'} 
+                      size={20} 
+                      color={colors.muted} 
+                    />
+                  </TouchableOpacity>
 
-                <View style={styles.orderInfoSection}>
-                  <View style={styles.infoCard}>
-                    <View style={styles.infoRow}>
-                      <View style={styles.iconContainer}>
-                        <Ionicons name="restaurant" size={18} color={colors.brand} />
-                      </View>
-                      <View style={styles.infoContent}>
-                        <Text style={styles.infoLabel}>Provider</Text>
-                        <Text style={styles.infoText}>{getProviderName(order)}</Text>
-                      </View>
-                    </View>
-                    <View style={styles.infoRow}>
-                      <View style={styles.iconContainer}>
-                        <Ionicons name="calendar-outline" size={18} color={colors.accent} />
-                      </View>
-                      <View style={styles.infoContent}>
-                        <Text style={styles.infoLabel}>Menu Date</Text>
-                        <Text style={styles.infoText}>{getMenuDate(order)}</Text>
-                      </View>
-                    </View>
-                  </View>
-                </View>
-
-                <View style={styles.itemsContainer}>
-                  <View style={styles.itemsHeader}>
-                    <Ionicons name="list" size={18} color={colors.text} />
-                    <Text style={styles.itemsTitle}>Order Items</Text>
-                  </View>
-                  <View style={styles.itemsList}>
-                    {order.items.map((item, index) => (
-                      <View key={index} style={styles.itemCard}>
-                        <View style={styles.itemDetails}>
-                          <View style={styles.itemIconContainer}>
-                            <Ionicons 
-                              name={item.mealType === 'riceOnly' ? 'boat-outline' : 'fast-food-outline'} 
-                              size={20} 
-                              color={colors.brand} 
-                            />
+                  {isExpanded && (
+                    <>
+                      <View style={styles.orderInfoSection}>
+                        <View style={styles.infoCard}>
+                          <View style={styles.infoRow}>
+                            <View style={styles.iconContainer}>
+                              <Ionicons name="restaurant" size={18} color={colors.brand} />
+                            </View>
+                            <View style={styles.infoContent}>
+                              <Text style={styles.infoLabel}>Provider</Text>
+                              <Text style={styles.infoText}>{getProviderName(order)}</Text>
+                            </View>
                           </View>
-                          <View style={styles.itemInfo}>
-                            <Text style={styles.itemName} numberOfLines={1}>
-                              {item.mealType === 'riceOnly' 
-                                ? 'Rice Only' 
-                                : `${item.mealType.charAt(0).toUpperCase() + item.mealType.slice(1)} - ${item.sabji || ''}`}
-                            </Text>
-                            <Text style={styles.itemQuantity}>Quantity: {item.quantity}</Text>
+                          <View style={styles.infoRow}>
+                            <View style={styles.iconContainer}>
+                              <Ionicons name="calendar-outline" size={18} color={colors.accent} />
+                            </View>
+                            <View style={styles.infoContent}>
+                              <Text style={styles.infoLabel}>Order Date</Text>
+                              <Text style={styles.infoText}>
+                                {formatMenuDate(order.orderDate || order.createdAt)}
+                              </Text>
+                            </View>
                           </View>
                         </View>
-                        <Text style={styles.itemPrice}>₹{item.totalPrice}</Text>
                       </View>
-                    ))}
-                  </View>
-                </View>
 
-                <View style={styles.orderFooter}>
-                  <View style={styles.totalContainer}>
-                    <Text style={styles.totalLabel}>Total Amount</Text>
-                    <Text style={styles.totalText}>₹{order.grandTotal}</Text>
-                  </View>
+                      <View style={styles.itemsContainer}>
+                        <View style={styles.itemsHeader}>
+                          <Ionicons name="list" size={18} color={colors.text} />
+                          <Text style={styles.itemsTitle}>Order Items</Text>
+                        </View>
+                        <View style={styles.itemsList}>
+                          {order.items.map((item, index) => (
+                            <View key={index} style={styles.itemCard}>
+                              <View style={styles.itemDetails}>
+                                <View style={styles.itemIconContainer}>
+                                  <Ionicons 
+                                    name={item.mealType === 'riceOnly' ? 'restaurant-outline' : 'fast-food-outline'} 
+                                    size={20} 
+                                    color={colors.brand} 
+                                  />
+                                </View>
+                                <View style={styles.itemInfo}>
+                                  <Text style={styles.itemName} numberOfLines={1}>
+                                    {item.mealType === 'riceOnly' 
+                                      ? 'Rice Only' 
+                                      : `${item.mealType.charAt(0).toUpperCase() + item.mealType.slice(1)} - ${item.sabji || ''}`}
+                                  </Text>
+                                  <Text style={styles.itemQuantity}>Quantity: {item.quantity}</Text>
+                                </View>
+                              </View>
+                              <Text style={styles.itemPrice}>₹{item.totalPrice}</Text>
+                            </View>
+                          ))}
+                        </View>
+                      </View>
+
+                      <View style={styles.orderFooter}>
+                        <View style={styles.totalContainer}>
+                          <Text style={styles.totalLabel}>Total Amount</Text>
+                          <Text style={styles.totalText}>₹{order.grandTotal}</Text>
+                        </View>
+                      </View>
+                    </>
+                  )}
                 </View>
-              </View>
-            ))}
+              );
+            })}
           </View>
         )}
       </ScrollView>
@@ -230,7 +276,7 @@ const styles = StyleSheet.create({
   orderCard: {
     backgroundColor: colors.surface,
     borderRadius: 20,
-    padding: 20,
+    padding: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.12,
@@ -240,7 +286,10 @@ const styles = StyleSheet.create({
     borderColor: colors.muted + '30',
   },
   orderHeader: {
-    marginBottom: 16,
+    marginBottom: 0,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
   },
   orderHeaderLeft: {
     gap: 8,
@@ -265,14 +314,23 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.muted,
   },
+  summaryRow: {
+    marginTop: 6,
+  },
+  summaryText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.text,
+  },
   orderInfoSection: {
-    marginBottom: 16,
+    marginTop: 12,
+    marginBottom: 12,
   },
   infoCard: {
     backgroundColor: colors.bg,
     borderRadius: 12,
-    padding: 12,
-    gap: 12,
+    padding: 10,
+    gap: 10,
   },
   infoRow: {
     flexDirection: 'row',
@@ -304,13 +362,13 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   itemsContainer: {
-    marginBottom: 16,
+    marginBottom: 12,
   },
   itemsHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginBottom: 12,
+    marginBottom: 10,
   },
   itemsTitle: {
     fontSize: 16,
@@ -318,7 +376,7 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   itemsList: {
-    gap: 10,
+    gap: 8,
   },
   itemCard: {
     flexDirection: 'row',
@@ -326,7 +384,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.bg,
     borderRadius: 12,
-    padding: 12,
+    padding: 10,
   },
   itemDetails: {
     flexDirection: 'row',
@@ -361,7 +419,7 @@ const styles = StyleSheet.create({
     color: colors.brand,
   },
   orderFooter: {
-    paddingTop: 16,
+    paddingTop: 12,
     borderTopWidth: 2,
     borderTopColor: colors.brand + '20',
   },

@@ -61,10 +61,11 @@ export interface Order {
   _id: string;
   userId: string | User;
   providerId: string | User;
-  menuId: string | Menu;
+  menuId: string | Menu | null;
   items: OrderItem[];
   grandTotal: number;
   status?: string;
+  orderDate?: string;
   createdAt?: string;
   updatedAt?: string;
 }
