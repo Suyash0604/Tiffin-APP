@@ -1,20 +1,41 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Image,
-  TouchableOpacity,
-  Alert,
-} from 'react-native';
+import { useTheme } from '@/contexts/ThemeContext';
+import { clearSession, fetchAndStoreUser, User } from '@/utils/api';
 import { router, useFocusEffect } from 'expo-router';
-import { colors } from '@/constants/theme';
-import { getUser, clearSession, User, fetchAndStoreUser } from '@/utils/api';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  Alert,
+  Animated,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
+} from 'react-native';
 
 export default function DashboardScreen() {
+  const { colors } = useTheme();
+  const styles = getStyles(colors);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const logoAnimation = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    // Create infinite up and down animation
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(logoAnimation, {
+          toValue: 1,
+          duration: 1500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(logoAnimation, {
+          toValue: 0,
+          duration: 1500,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, []);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -56,8 +77,8 @@ export default function DashboardScreen() {
 
   if (loading) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.loadingText}>Loading...</Text>
+      <View style={[styles.container, { backgroundColor: colors.bg }]}>
+        <Text style={[styles.loadingText, { color: colors.text }]}>Loading...</Text>
       </View>
     );
   }
@@ -65,9 +86,21 @@ export default function DashboardScreen() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.header}>
-        <Image
-          source={require('@/assets/images/logo.jpeg')}
-          style={styles.logo}
+        <Animated.Image
+          source={require('@/assets/images/logo3.png')}
+          style={[
+            styles.logo,
+            {
+              transform: [
+                {
+                  translateY: logoAnimation.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0, -7],
+                  }),
+                },
+              ],
+            },
+          ]}
           resizeMode="contain"
         />
         <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
@@ -108,35 +141,11 @@ export default function DashboardScreen() {
           </TouchableOpacity>
         </View>
       </View>
-
-      <View style={styles.infoCard}>
-        <Text style={styles.infoTitle}>Your Information</Text>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Email:</Text>
-          <Text style={styles.infoValue}>{user?.email}</Text>
-        </View>
-        {user?.mobile && (
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Mobile:</Text>
-            <Text style={styles.infoValue}>{user.mobile}</Text>
-          </View>
-        )}
-        {user?.address && (
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Address:</Text>
-            <Text style={styles.infoValue}>{user.address}</Text>
-          </View>
-        )}
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Role:</Text>
-          <Text style={styles.infoValue}>{user?.role || 'user'}</Text>
-        </View>
-      </View>
     </ScrollView>
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.bg,
@@ -226,40 +235,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.text,
   },
-  infoCard: {
-    backgroundColor: colors.surface,
-    borderRadius: 20,
-    padding: 24,
-    marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  infoTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: colors.text,
-    marginBottom: 16,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    marginBottom: 12,
-    flexWrap: 'wrap',
-  },
-  infoLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.muted,
-    marginRight: 8,
-    minWidth: 80,
-  },
-  infoValue: {
-    fontSize: 14,
-    color: colors.text,
-    flex: 1,
-  },
   loadingText: {
     fontSize: 16,
     color: colors.text,
@@ -268,3 +243,4 @@ const styles = StyleSheet.create({
   },
 });
 
+const styles = getStyles({}); // Will be overridden in component

@@ -1,26 +1,30 @@
+import { useTheme } from '@/contexts/ThemeContext';
+import { api } from '@/utils/api';
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  Image,
+    Alert,
+    Image,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
-import { colors } from '@/constants/theme';
-import { api } from '@/utils/api';
 
 export default function SignupScreen() {
+  const { colors } = useTheme();
+  const styles = getStyles(colors);
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [mobile, setMobile] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [address, setAddress] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -83,7 +87,7 @@ export default function SignupScreen() {
         >
           <View style={styles.logoContainer}>
             <Image
-              source={require('@/assets/images/logo.jpeg')}
+              source={require('@/assets/images/logo3.png')}
               style={styles.logo}
               resizeMode="contain"
             />
@@ -133,15 +137,27 @@ export default function SignupScreen() {
 
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Password</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter your password"
-                placeholderTextColor={colors.muted}
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-                autoCapitalize="none"
-              />
+              <View style={styles.passwordInputContainer}>
+                <TextInput
+                  style={styles.passwordInput}
+                  placeholder="Enter your password"
+                  placeholderTextColor={colors.muted}
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!showPassword}
+                  autoCapitalize="none"
+                />
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}
+                  style={styles.passwordToggle}
+                >
+                  <Ionicons
+                    name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                    size={20}
+                    color={colors.muted}
+                  />
+                </TouchableOpacity>
+              </View>
             </View>
 
             <View style={styles.inputContainer}>
@@ -180,7 +196,7 @@ export default function SignupScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.bg,
@@ -240,6 +256,24 @@ const styles = StyleSheet.create({
     color: colors.text,
     backgroundColor: colors.surface,
   },
+  passwordInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.muted,
+    borderRadius: 10,
+    backgroundColor: colors.surface,
+  },
+  passwordInput: {
+    flex: 1,
+    padding: 12,
+    fontSize: 16,
+    color: colors.text,
+  },
+  passwordToggle: {
+    padding: 12,
+    paddingLeft: 8,
+  },
   textArea: {
     height: 70,
     textAlignVertical: 'top',
@@ -275,3 +309,4 @@ const styles = StyleSheet.create({
   },
 });
 
+const styles = getStyles({}); // Will be overridden in component

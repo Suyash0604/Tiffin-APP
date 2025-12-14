@@ -594,11 +594,40 @@ export const api = {
     }
   },
 
-  async getOrders(userId: string): Promise<{ count: number; orders: Order[] }> {
-    const url = `${API_BASE_URL}/order?userId=${userId}`;
+  async getOrders(
+    userId: string,
+    startDate?: string,
+    endDate?: string
+  ): Promise<{ count: number; orders: Order[] }> {
+    // Format dates as YYYY-MM-DD if provided
+    const formatDate = (date: string | Date | undefined): string | undefined => {
+      if (!date) return undefined;
+      const d = typeof date === 'string' ? new Date(date) : date;
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
+    let url = `${API_BASE_URL}/order?userId=${userId}`;
+    
+    // Add date filters if provided
+    const formattedStartDate = startDate ? formatDate(startDate) : undefined;
+    const formattedEndDate = endDate ? formatDate(endDate) : undefined;
+    
+    if (formattedStartDate) {
+      url += `&startDate=${formattedStartDate}`;
+    }
+    if (formattedEndDate) {
+      url += `&endDate=${formattedEndDate}`;
+    }
     
     console.log('🔵 [getOrders] Starting request...');
     console.log('🔵 [getOrders] URL:', url);
+    const queryParams: any = { userId };
+    if (formattedStartDate) queryParams.startDate = formattedStartDate;
+    if (formattedEndDate) queryParams.endDate = formattedEndDate;
+    console.log('🔵 [getOrders] Query params:', queryParams);
 
     try {
       const response = await fetch(url, {
@@ -627,6 +656,7 @@ export const api = {
 
       const data = await response.json();
       console.log('✅ [getOrders] Success:', { count: data.count });
+      console.log('✅ [getOrders] Response data:', data);
       return data;
     } catch (error: any) {
       console.error('🔴 [getOrders] Fetch error:', error);
@@ -634,19 +664,40 @@ export const api = {
     }
   },
 
-  async getProviderOrders(providerId: string): Promise<{ count: number; orders: Order[] }> {
+  async getProviderOrders(
+    providerId: string,
+    startDate?: string,
+    endDate?: string
+  ): Promise<{ count: number; orders: Order[] }> {
     const url = `${API_BASE_URL}/provider/provider?providerId=${providerId}`;
+    
+    // Format dates as YYYY-MM-DD if provided
+    const formatDate = (date: string | Date | undefined): string | undefined => {
+      if (!date) return undefined;
+      const d = typeof date === 'string' ? new Date(date) : date;
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
+    const body = {
+      startDate: formatDate(startDate) || formatDate(new Date()),
+      endDate: formatDate(endDate) || formatDate(new Date()),
+    };
     
     console.log('🔵 [getProviderOrders] Starting request...');
     console.log('🔵 [getProviderOrders] URL:', url);
+    console.log('🔵 [getProviderOrders] Body:', body);
 
     try {
       const response = await fetch(url, {
-        method: 'GET',
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
+        body: JSON.stringify(body),
       });
 
       console.log('🟢 [getProviderOrders] Response status:', response.status);
@@ -670,6 +721,74 @@ export const api = {
       return data;
     } catch (error: any) {
       console.error('🔴 [getProviderOrders] Fetch error:', error);
+      throw error;
+    }
+  },
+
+  async getProviderOrdersSummary(
+    providerId: string,
+    date?: string
+  ): Promise<{
+    date: string;
+    totalOrders: number;
+    fullTiffin: number;
+    halfTiffin: number;
+    riceOnly: number;
+    totalRevenue: number;
+    orders: Order[];
+  }> {
+    // Format date as YYYY-MM-DD if provided
+    const formatDate = (date: string | Date | undefined): string | undefined => {
+      if (!date) return undefined;
+      const d = typeof date === 'string' ? new Date(date) : date;
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
+    const dateParam = formatDate(date) || formatDate(new Date());
+    const url = `${API_BASE_URL}/order/summary/provider?providerId=${providerId}&date=${dateParam}`;
+    
+    console.log('🔵 [getProviderOrdersSummary] Starting request...');
+    console.log('🔵 [getProviderOrdersSummary] URL:', url);
+    console.log('🔵 [getProviderOrdersSummary] Query params:', { providerId, date: dateParam });
+
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      });
+
+      console.log('🟢 [getProviderOrdersSummary] Response status:', response.status);
+      console.log('🟢 [getProviderOrdersSummary] Response OK:', response.ok);
+
+      if (!response.ok) {
+        let errorData;
+        try {
+          errorData = await response.json();
+          console.error('🔴 [getProviderOrdersSummary] Error response:', errorData);
+        } catch (e) {
+          const text = await response.text();
+          console.error('🔴 [getProviderOrdersSummary] Error response (text):', text);
+          errorData = { message: text || 'Failed to fetch orders summary' };
+        }
+        throw new Error(errorData.message || 'Failed to fetch orders summary');
+      }
+
+      const data = await response.json();
+      console.log('✅ [getProviderOrdersSummary] Success:', data);
+      
+      if (data.success && data.data) {
+        return data.data;
+      } else {
+        throw new Error('Invalid response format');
+      }
+    } catch (error: any) {
+      console.error('🔴 [getProviderOrdersSummary] Fetch error:', error);
       throw error;
     }
   },

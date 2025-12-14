@@ -11,10 +11,12 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { api, Menu, getUser, User } from '@/utils/api';
 
 export default function MenuScreen() {
+  const { colors } = useTheme();
+  const styles = getStyles(colors);
   const [menus, setMenus] = useState<Menu[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedMenu, setSelectedMenu] = useState<Menu | null>(null);
@@ -234,47 +236,38 @@ export default function MenuScreen() {
                 key={menu._id}
                 style={styles.menuCard}
                 onPress={() => handleOrderMenu(menu)}
+                activeOpacity={0.7}
               >
                 <View style={styles.menuHeader}>
-                  <View>
+                  <View style={styles.menuHeaderLeft}>
                     <Text style={styles.providerName}>{getProviderName(menu)}</Text>
                     <Text style={styles.menuDate}>{formatDate(menu.date)}</Text>
                   </View>
-                  <Ionicons name="chevron-forward" size={24} color={colors.muted} />
+                  <Ionicons name="chevron-forward" size={20} color={colors.muted} />
                 </View>
 
-                <View style={styles.sabjisContainer}>
-                  <Text style={styles.sabjisTitle}>Available Sabjis:</Text>
-                  <View style={styles.sabjisList}>
-                    {menu.sabjis.map((sabzi, index) => (
-                      <View key={index} style={styles.sabziItem}>
-                        <Text style={styles.sabziText}>{sabzi}</Text>
-                      </View>
-                    ))}
+                <View style={styles.sabjisTagsContainer}>
+                  {menu.sabjis.map((sabji, index) => (
+                    <View key={index} style={styles.sabjiTag}>
+                      <Text style={styles.sabjiTagText}>{sabji}</Text>
+                    </View>
+                  ))}
+                </View>
+
+                <View style={styles.pricesTagsContainer}>
+                  <View style={styles.priceTag}>
+                    <Text style={styles.priceTagLabel}>Full</Text>
+                    <Text style={styles.priceTagValue}>₹{menu.prices.full}</Text>
+                  </View>
+                  <View style={styles.priceTag}>
+                    <Text style={styles.priceTagLabel}>Half</Text>
+                    <Text style={styles.priceTagValue}>₹{menu.prices.half}</Text>
+                  </View>
+                  <View style={styles.priceTag}>
+                    <Text style={styles.priceTagLabel}>Rice</Text>
+                    <Text style={styles.priceTagValue}>₹{menu.prices.riceOnly}</Text>
                   </View>
                 </View>
-
-                <View style={styles.pricesContainer}>
-                  <Text style={styles.pricesTitle}>Prices:</Text>
-                  <View style={styles.pricesGrid}>
-                    <View style={styles.priceItem}>
-                      <Text style={styles.priceLabel}>Full</Text>
-                      <Text style={styles.priceValue}>₹{menu.prices.full}</Text>
-                    </View>
-                    <View style={styles.priceItem}>
-                      <Text style={styles.priceLabel}>Half</Text>
-                      <Text style={styles.priceValue}>₹{menu.prices.half}</Text>
-                    </View>
-                    <View style={styles.priceItem}>
-                      <Text style={styles.priceLabel}>Rice Only</Text>
-                      <Text style={styles.priceValue}>₹{menu.prices.riceOnly}</Text>
-                    </View>
-                  </View>
-                </View>
-
-                <TouchableOpacity style={styles.orderButton}>
-                  <Text style={styles.orderButtonText}>Place Order</Text>
-                </TouchableOpacity>
               </TouchableOpacity>
             ))}
           </View>
@@ -442,7 +435,7 @@ export default function MenuScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.bg,
@@ -493,7 +486,7 @@ const styles = StyleSheet.create({
   menuCard: {
     backgroundColor: colors.surface,
     borderRadius: 16,
-    padding: 16,
+    padding: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -504,87 +497,65 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.muted,
-  },
-  providerName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: colors.brand,
-    marginBottom: 4,
-  },
-  menuDate: {
-    fontSize: 14,
-    color: colors.muted,
-  },
-  sabjisContainer: {
-    marginBottom: 12,
-  },
-  sabjisTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.text,
     marginBottom: 8,
   },
-  sabjisList: {
+  menuHeaderLeft: {
+    flex: 1,
+  },
+  providerName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: colors.brand,
+    marginBottom: 2,
+  },
+  menuDate: {
+    fontSize: 12,
+    color: colors.muted,
+  },
+  sabjisTagsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
+    marginTop: 8,
+    marginBottom: 10,
   },
-  sabziItem: {
+  sabjiTag: {
     backgroundColor: colors.bg,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.muted,
+  },
+  sabjiTagText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  pricesTagsContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+  priceTag: {
+    backgroundColor: colors.brand,
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 16,
-  },
-  sabziText: {
-    fontSize: 14,
-    color: colors.text,
-  },
-  pricesContainer: {
-    marginBottom: 12,
-  },
-  pricesTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: 8,
-  },
-  pricesGrid: {
+    borderRadius: 12,
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 8,
-  },
-  priceItem: {
-    flex: 1,
-    backgroundColor: colors.bg,
-    padding: 12,
-    borderRadius: 8,
     alignItems: 'center',
+    gap: 4,
   },
-  priceLabel: {
-    fontSize: 12,
-    color: colors.muted,
-    marginBottom: 4,
-  },
-  priceValue: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: colors.brand,
-  },
-  orderButton: {
-    backgroundColor: colors.brand,
-    borderRadius: 10,
-    padding: 14,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  orderButtonText: {
-    color: colors.surface,
-    fontSize: 16,
+  priceTagLabel: {
+    fontSize: 11,
     fontWeight: '600',
+    color: colors.surface,
+    textTransform: 'uppercase',
+  },
+  priceTagValue: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: colors.surface,
   },
   modalOverlay: {
     flex: 1,
@@ -795,3 +766,5 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
+
+const styles = getStyles({}); // Will be overridden in component

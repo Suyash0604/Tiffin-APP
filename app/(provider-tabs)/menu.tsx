@@ -14,10 +14,12 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { api, Menu, getUser } from '@/utils/api';
 
 export default function ProviderMenuScreen() {
+  const { colors } = useTheme();
+  const styles = getStyles(colors);
   const [menus, setMenus] = useState<Menu[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -515,7 +517,7 @@ export default function ProviderMenuScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.bg,
@@ -811,3 +813,5 @@ const styles = StyleSheet.create({
     color: colors.surface,
   },
 });
+
+const styles = getStyles({}); // Will be overridden in component

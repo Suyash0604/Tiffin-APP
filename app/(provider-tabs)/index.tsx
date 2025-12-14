@@ -1,25 +1,59 @@
-import React, { useState } from 'react';
+import { useTheme } from '@/contexts/ThemeContext';
+import { api, clearSession, fetchAndStoreUser, getUser, User } from '@/utils/api';
+import { Ionicons } from '@expo/vector-icons';
+import { router, useFocusEffect } from 'expo-router';
+import React, { useEffect, useRef, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Image,
-  TouchableOpacity,
   Alert,
+  Animated,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router, useFocusEffect } from 'expo-router';
-import { colors } from '@/constants/theme';
-import { getUser, clearSession, User, fetchAndStoreUser } from '@/utils/api';
+
+interface OrdersSummary {
+  date: string;
+  totalOrders: number;
+  fullTiffin: number;
+  halfTiffin: number;
+  riceOnly: number;
+  totalRevenue: number;
+}
 
 export default function ProviderDashboardScreen() {
+  const { colors } = useTheme();
+  const styles = getStyles(colors);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [ordersSummary, setOrdersSummary] = useState<OrdersSummary | null>(null);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const logoAnimation = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    // Create infinite up and down animation
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(logoAnimation, {
+          toValue: 1,
+          duration: 1500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(logoAnimation, {
+          toValue: 0,
+          duration: 1500,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, []);
 
   useFocusEffect(
     React.useCallback(() => {
       loadUser();
+      loadOrdersSummary();
     }, [])
   );
 
@@ -46,6 +80,44 @@ export default function ProviderDashboardScreen() {
     }
   };
 
+  const loadOrdersSummary = async () => {
+    try {
+      const userData = await getUser();
+      if (!userData || !userData.id) {
+        return;
+      }
+
+      setSummaryLoading(true);
+      // Get today's orders summary from API
+      const summary = await api.getProviderOrdersSummary(userData.id);
+      setOrdersSummary(summary);
+    } catch (error: any) {
+      console.error('Error loading orders summary:', error);
+      // Don't show error alert for summary, just set empty summary
+      const today = new Date().toISOString().split('T')[0];
+      setOrdersSummary({
+        date: today,
+        totalOrders: 0,
+        fullTiffin: 0,
+        halfTiffin: 0,
+        riceOnly: 0,
+        totalRevenue: 0,
+      });
+    } finally {
+      setSummaryLoading(false);
+    }
+  };
+
+  const formatDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  };
+
   const handleLogout = async () => {
     Alert.alert('Logout', 'Are you sure you want to logout?', [
       { text: 'Cancel', style: 'cancel' },
@@ -62,9 +134,9 @@ export default function ProviderDashboardScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['top']}>
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Loading...</Text>
+          <Text style={[styles.loadingText, { color: colors.text }]}>Loading...</Text>
         </View>
       </SafeAreaView>
     );
@@ -74,9 +146,21 @@ export default function ProviderDashboardScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
         <View style={styles.header}>
-          <Image
-            source={require('@/assets/images/logo.jpeg')}
-            style={styles.logo}
+          <Animated.Image
+            source={require('@/assets/images/logo3.png')}
+            style={[
+              styles.logo,
+              {
+                transform: [
+                  {
+                    translateY: logoAnimation.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0, -7],
+                    }),
+                  },
+                ],
+              },
+            ]}
             resizeMode="contain"
           />
           <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
@@ -89,6 +173,52 @@ export default function ProviderDashboardScreen() {
           <Text style={styles.name}>{user?.name || 'Provider'}</Text>
           <Text style={styles.subtitle}>Provider Dashboard</Text>
         </View>
+
+        {ordersSummary && (
+          <TouchableOpacity
+            style={styles.summaryCard}
+            onPress={() => router.push('/(provider-tabs)/orders')}
+            activeOpacity={0.7}
+          >
+            <View style={styles.summaryHeader}>
+              <View style={styles.summaryTitleContainer}>
+                <Text style={styles.summaryTitle}>Orders Summary</Text>
+                <Text style={styles.summaryDate}>{formatDate(ordersSummary.date)}</Text>
+              </View>
+              <View style={styles.viewMoreButton}>
+                <Text style={styles.viewMoreText}>View More</Text>
+                <Ionicons name="chevron-forward" size={16} color={colors.brand} />
+              </View>
+            </View>
+
+            <View style={styles.summaryStats}>
+              <View style={styles.summaryStatItem}>
+                <Text style={styles.summaryStatValue}>{ordersSummary.totalOrders}</Text>
+                <Text style={styles.summaryStatLabel}>Total Orders</Text>
+              </View>
+              <View style={styles.summaryStatDivider} />
+              <View style={styles.summaryStatItem}>
+                <Text style={styles.summaryStatValue}>{ordersSummary.fullTiffin}</Text>
+                <Text style={styles.summaryStatLabel}>Full Tiffin</Text>
+              </View>
+              <View style={styles.summaryStatDivider} />
+              <View style={styles.summaryStatItem}>
+                <Text style={styles.summaryStatValue}>{ordersSummary.halfTiffin}</Text>
+                <Text style={styles.summaryStatLabel}>Half Tiffin</Text>
+              </View>
+              <View style={styles.summaryStatDivider} />
+              <View style={styles.summaryStatItem}>
+                <Text style={styles.summaryStatValue}>{ordersSummary.riceOnly}</Text>
+                <Text style={styles.summaryStatLabel}>Rice Only</Text>
+              </View>
+            </View>
+
+            <View style={styles.totalRevenueContainer}>
+              <Text style={styles.totalRevenueLabel}>Total Revenue</Text>
+              <Text style={styles.totalRevenueValue}>₹{ordersSummary.totalRevenue.toLocaleString()}</Text>
+            </View>
+          </TouchableOpacity>
+        )}
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Quick Actions</Text>
@@ -107,7 +237,10 @@ export default function ProviderDashboardScreen() {
               <Text style={styles.actionIcon}>📦</Text>
               <Text style={styles.actionText}>View Orders</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.actionCard}>
+            <TouchableOpacity 
+              style={styles.actionCard}
+              onPress={() => router.push('/(provider-tabs)/analytics')}
+            >
               <Text style={styles.actionIcon}>📊</Text>
               <Text style={styles.actionText}>Analytics</Text>
             </TouchableOpacity>
@@ -120,36 +253,12 @@ export default function ProviderDashboardScreen() {
             </TouchableOpacity>
           </View>
         </View>
-
-        <View style={styles.infoCard}>
-          <Text style={styles.infoTitle}>Provider Information</Text>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Email:</Text>
-            <Text style={styles.infoValue}>{user?.email}</Text>
-          </View>
-          {user?.mobile && (
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Mobile:</Text>
-              <Text style={styles.infoValue}>{user.mobile}</Text>
-            </View>
-          )}
-          {user?.address && (
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Address:</Text>
-              <Text style={styles.infoValue}>{user.address}</Text>
-            </View>
-          )}
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Role:</Text>
-            <Text style={styles.infoValue}>{user?.role || 'provider'}</Text>
-          </View>
-        </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.bg,
@@ -173,12 +282,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
-    marginTop: 8,
+    marginBottom: 12,
+    marginTop: 4,
   },
   logo: {
-    width: 60,
-    height: 60,
+    width: 70,
+    height: 70,
   },
   logoutButton: {
     padding: 8,
@@ -191,8 +300,8 @@ const styles = StyleSheet.create({
   welcomeCard: {
     backgroundColor: colors.surface,
     borderRadius: 16,
-    padding: 20,
-    marginBottom: 20,
+    padding: 16,
+    marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -200,20 +309,107 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   greeting: {
-    fontSize: 28,
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: colors.text,
+    marginBottom: 2,
+  },
+  name: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: colors.brand,
+    marginBottom: 4,
+  },
+  subtitle: {
+    fontSize: 12,
+    color: colors.muted,
+  },
+  summaryCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  summaryHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  summaryTitleContainer: {
+    flex: 1,
+  },
+  summaryTitle: {
+    fontSize: 18,
     fontWeight: 'bold',
     color: colors.text,
     marginBottom: 4,
   },
-  name: {
-    fontSize: 24,
+  summaryDate: {
+    fontSize: 12,
+    color: colors.muted,
+    fontWeight: '500',
+  },
+  viewMoreButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  viewMoreText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.brand,
+  },
+  summaryStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+    paddingVertical: 12,
+  },
+  summaryStatItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  summaryStatValue: {
+    fontSize: 20,
     fontWeight: 'bold',
     color: colors.brand,
-    marginBottom: 6,
+    marginBottom: 4,
   },
-  subtitle: {
-    fontSize: 14,
+  summaryStatLabel: {
+    fontSize: 11,
     color: colors.muted,
+    textAlign: 'center',
+  },
+  summaryStatDivider: {
+    width: 1,
+    height: 40,
+    backgroundColor: colors.muted,
+    opacity: 0.3,
+  },
+  totalRevenueContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: colors.muted,
+  },
+  totalRevenueLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  totalRevenueValue: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: colors.accent,
   },
   section: {
     marginBottom: 20,
@@ -251,39 +447,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.text,
   },
-  infoCard: {
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  infoTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: colors.text,
-    marginBottom: 12,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    marginBottom: 10,
-    flexWrap: 'wrap',
-  },
-  infoLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.muted,
-    marginRight: 8,
-    minWidth: 80,
-  },
-  infoValue: {
-    fontSize: 14,
-    color: colors.text,
-    flex: 1,
-  },
 });
 
+const styles = getStyles({}); // Will be overridden in component

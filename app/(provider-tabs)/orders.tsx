@@ -6,17 +6,27 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
+  Modal,
+  Platform,
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { api, Order, getUser } from '@/utils/api';
 
 export default function ProviderOrdersScreen() {
+  const { colors } = useTheme();
+  const styles = getStyles(colors);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
   const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
+  const [showFilterModal, setShowFilterModal] = useState(false);
+  const [fromDate, setFromDate] = useState<Date>(new Date());
+  const [toDate, setToDate] = useState<Date>(new Date());
+  const [showFromDatePicker, setShowFromDatePicker] = useState(false);
+  const [showToDatePicker, setShowToDatePicker] = useState(false);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -32,7 +42,9 @@ export default function ProviderOrdersScreen() {
       }
 
       setLoading(true);
-      const response = await api.getProviderOrders(user.id);
+      const startDateStr = formatDateForAPI(fromDate);
+      const endDateStr = formatDateForAPI(toDate);
+      const response = await api.getProviderOrders(user.id, startDateStr, endDateStr);
       setOrders(response.orders);
     } catch (error: any) {
       console.error('Error loading orders:', error);
@@ -137,10 +149,75 @@ export default function ProviderOrdersScreen() {
     });
   };
 
+  const formatDateForDisplay = (date: Date) => {
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  };
+
+  const formatDateForAPI = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const handleFilterPress = () => {
+    setShowFilterModal(true);
+  };
+
+  const handleApplyFilter = () => {
+    setShowFilterModal(false);
+    // Reload orders with new date filters
+    loadOrders();
+  };
+
+  const handleClearFilter = () => {
+    const today = new Date();
+    setFromDate(today);
+    setToDate(today);
+    setShowFilterModal(false);
+    // Reload orders with today's date
+    setTimeout(() => {
+      loadOrders();
+    }, 100);
+  };
+
+  const handleFromDateChange = (event: any, selectedDate?: Date) => {
+    if (Platform.OS === 'android') {
+      setShowFromDatePicker(false);
+      if (event.type === 'set' && selectedDate) {
+        setFromDate(selectedDate);
+      }
+    } else {
+      if (selectedDate) {
+        setFromDate(selectedDate);
+      }
+    }
+  };
+
+  const handleToDateChange = (event: any, selectedDate?: Date) => {
+    if (Platform.OS === 'android') {
+      setShowToDatePicker(false);
+      if (event.type === 'set' && selectedDate) {
+        setToDate(selectedDate);
+      }
+    } else {
+      if (selectedDate) {
+        setToDate(selectedDate);
+      }
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Orders</Text>
+        <TouchableOpacity onPress={handleFilterPress} style={styles.filterButton}>
+          <Ionicons name="filter-outline" size={22} color={colors.brand} />
+        </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
@@ -303,16 +380,110 @@ export default function ProviderOrdersScreen() {
           </View>
         )}
       </ScrollView>
+
+      {/* Filter Modal */}
+      <Modal
+        visible={showFilterModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowFilterModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Filter Orders</Text>
+              <TouchableOpacity
+                onPress={() => setShowFilterModal(false)}
+                style={styles.closeButton}
+              >
+                <Ionicons name="close" size={24} color={colors.text} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.dateInputContainer}>
+              <View style={styles.dateInputWrapper}>
+                <Text style={styles.dateLabel}>From Date</Text>
+                <TouchableOpacity
+                  style={styles.dateInput}
+                  onPress={() => {
+                    if (Platform.OS === 'android') {
+                      setShowFromDatePicker(true);
+                    } else {
+                      setShowFromDatePicker(!showFromDatePicker);
+                    }
+                  }}
+                >
+                  <Text style={styles.dateInputText}>{formatDateForDisplay(fromDate)}</Text>
+                  <Ionicons name="calendar-outline" size={20} color={colors.brand} />
+                </TouchableOpacity>
+                {showFromDatePicker && (
+                  <DateTimePicker
+                    value={fromDate}
+                    mode="date"
+                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                    onChange={handleFromDateChange}
+                    maximumDate={toDate}
+                  />
+                )}
+              </View>
+
+              <View style={styles.dateInputWrapper}>
+                <Text style={styles.dateLabel}>To Date</Text>
+                <TouchableOpacity
+                  style={styles.dateInput}
+                  onPress={() => {
+                    if (Platform.OS === 'android') {
+                      setShowToDatePicker(true);
+                    } else {
+                      setShowToDatePicker(!showToDatePicker);
+                    }
+                  }}
+                >
+                  <Text style={styles.dateInputText}>{formatDateForDisplay(toDate)}</Text>
+                  <Ionicons name="calendar-outline" size={20} color={colors.brand} />
+                </TouchableOpacity>
+                {showToDatePicker && (
+                  <DateTimePicker
+                    value={toDate}
+                    mode="date"
+                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                    onChange={handleToDateChange}
+                    minimumDate={fromDate}
+                  />
+                )}
+              </View>
+            </View>
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.clearButton]}
+                onPress={handleClearFilter}
+              >
+                <Text style={styles.clearButtonText}>Clear</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.applyButton]}
+                onPress={handleApplyFilter}
+              >
+                <Text style={styles.applyButtonText}>Apply Filter</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.bg,
   },
   header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     padding: 16,
     paddingTop: 8,
     backgroundColor: colors.surface,
@@ -323,6 +494,11 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     color: colors.text,
+  },
+  filterButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: colors.brand + '15',
   },
   scrollView: {
     flex: 1,
@@ -593,4 +769,91 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.danger,
   },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 20,
+    paddingBottom: 40,
+    maxHeight: '80%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: colors.text,
+  },
+  closeButton: {
+    padding: 4,
+  },
+  dateInputContainer: {
+    gap: 20,
+    marginBottom: 24,
+  },
+  dateInputWrapper: {
+    position: 'relative',
+  },
+  dateLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 8,
+  },
+  dateInput: {
+    backgroundColor: colors.bg,
+    borderRadius: 12,
+    padding: 16,
+    fontSize: 16,
+    color: colors.text,
+    borderWidth: 1,
+    borderColor: colors.muted + '40',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  dateInputText: {
+    fontSize: 16,
+    color: colors.text,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  clearButton: {
+    backgroundColor: colors.bg,
+    borderWidth: 1,
+    borderColor: colors.muted + '40',
+  },
+  clearButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  applyButton: {
+    backgroundColor: colors.brand,
+  },
+  applyButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.surface,
+  },
 });
+
+const styles = getStyles({}); // Will be overridden in component

@@ -1,10 +1,12 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors } from '@/constants/theme';
+import { Platform } from 'react-native';
+import { useTheme } from '@/contexts/ThemeContext';
 
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
   
   return (
     <Tabs
@@ -14,20 +16,40 @@ export default function TabsLayout() {
         tabBarInactiveTintColor: colors.muted,
         tabBarStyle: {
           backgroundColor: colors.surface,
-          borderTopColor: colors.muted,
-          borderTopWidth: 1,
-          height: 60 + Math.max(insets.bottom, 0),
-          paddingBottom: Math.max(insets.bottom, 8),
-          paddingTop: 8,
-          elevation: 8,
+          borderTopWidth: 0,
+          height: 65 + Math.max(insets.bottom, 0),
+          paddingBottom: Math.max(insets.bottom, 5),
+          paddingTop: 10,
+          paddingHorizontal: 10,
+          position: 'absolute',
+          borderTopLeftRadius: 26,
+          borderTopRightRadius: 26,
+          elevation: 20,
           shadowColor: '#000',
-          shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 4,
+          shadowOffset: { width: 0, height: -4 },
+          shadowOpacity: 0.15,
+          shadowRadius: 12,
+          ...Platform.select({
+            ios: {
+              borderTopWidth: 0.5,
+              borderTopColor: colors.muted + '20',
+            },
+            android: {
+              borderTopWidth: 0,
+            },
+          }),
         },
         tabBarLabelStyle: {
-          fontSize: 12,
+          fontSize: 11,
           fontWeight: '600',
+          marginTop: 2,
+          marginBottom: 2,
+        },
+        tabBarIconStyle: {
+          marginTop: 4,
+        },
+        tabBarItemStyle: {
+          paddingVertical: 4,
         },
       }}
     >
@@ -35,8 +57,8 @@ export default function TabsLayout() {
         name="index"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home" size={size} color={color} />
+          tabBarIcon: ({ color, focused, size }) => (
+            <Ionicons name={focused ? "home" : "home-outline"} size={24} color={color} />
           ),
         }}
       />
@@ -44,8 +66,8 @@ export default function TabsLayout() {
         name="menu"
         options={{
           title: 'Menu',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="restaurant" size={size} color={color} />
+          tabBarIcon: ({ color, focused, size }) => (
+            <Ionicons name={focused ? "restaurant" : "restaurant-outline"} size={24} color={color} />
           ),
         }}
       />
@@ -53,8 +75,8 @@ export default function TabsLayout() {
         name="orders"
         options={{
           title: 'Orders',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="receipt" size={size} color={color} />
+          tabBarIcon: ({ color, focused, size }) => (
+            <Ionicons name={focused ? "receipt" : "receipt-outline"} size={24} color={color} />
           ),
         }}
       />
@@ -62,8 +84,8 @@ export default function TabsLayout() {
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person" size={size} color={color} />
+          tabBarIcon: ({ color, focused, size }) => (
+            <Ionicons name={focused ? "person" : "person-outline"} size={24} color={color} />
           ),
         }}
       />

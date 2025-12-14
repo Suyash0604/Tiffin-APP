@@ -13,10 +13,13 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
-import { colors } from '@/constants/theme';
+import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '@/contexts/ThemeContext';
 import { api } from '@/utils/api';
 
 export default function OTPScreen() {
+  const { colors } = useTheme();
+  const styles = getStyles(colors);
   const params = useLocalSearchParams<{ 
     email: string;
     name?: string;
@@ -103,6 +106,13 @@ export default function OTPScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <Ionicons name="arrow-back" size={24} color={colors.text} />
+          </TouchableOpacity>
+
           <View style={styles.logoContainer}>
             <Image
               source={require('@/assets/images/image.png')}
@@ -163,7 +173,7 @@ export default function OTPScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.bg,
@@ -176,6 +186,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 16,
     paddingTop: 8,
+  },
+  backButton: {
+    alignSelf: 'flex-start',
+    padding: 8,
+    marginBottom: 16,
+    marginLeft: -8,
   },
   logoContainer: {
     alignItems: 'center',
@@ -252,3 +268,4 @@ const styles = StyleSheet.create({
   },
 });
 
+const styles = getStyles({}); // Will be overridden in component

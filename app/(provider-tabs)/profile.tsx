@@ -6,14 +6,16 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
-  Image,
+  Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
-import { colors } from '@/constants/theme';
+import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '@/contexts/ThemeContext';
 import { getUser, clearSession, User, fetchAndStoreUser } from '@/utils/api';
 
 export default function ProviderProfileScreen() {
+  const { colors, theme, toggleTheme } = useTheme();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -57,65 +59,76 @@ export default function ProviderProfileScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['top']}>
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Loading...</Text>
+          <Text style={[styles.loadingText, { color: colors.text }]}>Loading...</Text>
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['top']}>
+      <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.muted }]}>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Profile</Text>
+        <TouchableOpacity onPress={handleLogout} style={styles.logoutHeaderButton}>
+          <Ionicons name="log-out-outline" size={20} color={colors.danger} />
+          <Text style={[styles.logoutHeaderText, { color: colors.danger }]}>Logout</Text>
+        </TouchableOpacity>
+      </View>
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
-        <View style={styles.header}>
-          <Image
-            source={require('@/assets/images/logo.jpeg')}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-          <Text style={styles.headerTitle}>Provider Profile</Text>
-        </View>
 
-        <View style={styles.profileCard}>
-          <View style={styles.avatarContainer}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>
-                {user?.name?.charAt(0).toUpperCase() || 'P'}
-              </Text>
-            </View>
-          </View>
-          <Text style={styles.name}>{user?.name || 'Provider'}</Text>
-          <Text style={styles.role}>Tiffin Provider</Text>
-        </View>
-
-        <View style={styles.infoCard}>
-          <Text style={styles.infoTitle}>Account Information</Text>
+        <View style={[styles.infoCard, { backgroundColor: colors.surface }]}>
+          <Text style={[styles.infoTitle, { color: colors.text }]}>Account Information</Text>
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Email:</Text>
-            <Text style={styles.infoValue}>{user?.email}</Text>
+            <Text style={[styles.infoLabel, { color: colors.muted }]}>Email:</Text>
+            <Text style={[styles.infoValue, { color: colors.text }]}>{user?.email}</Text>
           </View>
           {user?.mobile && (
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Mobile:</Text>
-              <Text style={styles.infoValue}>{user.mobile}</Text>
+              <Text style={[styles.infoLabel, { color: colors.muted }]}>Mobile:</Text>
+              <Text style={[styles.infoValue, { color: colors.text }]}>{user.mobile}</Text>
             </View>
           )}
           {user?.address && (
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Address:</Text>
-              <Text style={styles.infoValue}>{user.address}</Text>
+              <Text style={[styles.infoLabel, { color: colors.muted }]}>Address:</Text>
+              <Text style={[styles.infoValue, { color: colors.text }]}>{user.address}</Text>
             </View>
           )}
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Role:</Text>
-            <Text style={styles.infoValue}>{user?.role || 'provider'}</Text>
+            <Text style={[styles.infoLabel, { color: colors.muted }]}>Role:</Text>
+            <Text style={[styles.infoValue, { color: colors.text }]}>{user?.role || 'provider'}</Text>
           </View>
         </View>
 
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <Text style={styles.logoutButtonText}>Logout</Text>
-        </TouchableOpacity>
+        <View style={[styles.settingsCard, { backgroundColor: colors.surface }]}>
+          <Text style={[styles.settingsTitle, { color: colors.text }]}>Settings</Text>
+          
+          <View style={styles.settingRow}>
+            <View style={styles.settingLeft}>
+              <Ionicons 
+                name={theme === 'dark' ? 'moon' : 'sunny'} 
+                size={24} 
+                color={colors.brand} 
+                style={styles.settingIcon}
+              />
+              <View style={styles.settingTextContainer}>
+                <Text style={[styles.settingLabel, { color: colors.text }]}>Dark Mode</Text>
+                <Text style={[styles.settingDescription, { color: colors.muted }]}>
+                  Switch to dark theme
+                </Text>
+              </View>
+            </View>
+            <Switch
+              value={theme === 'dark'}
+              onValueChange={toggleTheme}
+              trackColor={{ false: colors.muted + '40', true: colors.brand + '80' }}
+              thumbColor={theme === 'dark' ? colors.brand : colors.surface}
+              ios_backgroundColor={colors.muted + '40'}
+            />
+          </View>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -124,7 +137,6 @@ export default function ProviderProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.bg,
   },
   scrollView: {
     flex: 1,
@@ -139,63 +151,30 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 16,
-    color: colors.text,
   },
   header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 24,
-    marginTop: 8,
-  },
-  logo: {
-    width: 80,
-    height: 80,
-    marginBottom: 12,
+    padding: 16,
+    paddingTop: 8,
+    borderBottomWidth: 1,
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: colors.text,
   },
-  profileCard: {
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    padding: 24,
+  logoutHeaderButton: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    gap: 6,
+    padding: 4,
   },
-  avatarContainer: {
-    marginBottom: 16,
-  },
-  avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: colors.brand,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarText: {
-    fontSize: 40,
-    fontWeight: 'bold',
-    color: colors.surface,
-  },
-  name: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: colors.text,
-    marginBottom: 4,
-  },
-  role: {
+  logoutHeaderText: {
     fontSize: 14,
-    color: colors.muted,
+    fontWeight: '600',
   },
   infoCard: {
-    backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 20,
     marginBottom: 20,
@@ -208,7 +187,6 @@ const styles = StyleSheet.create({
   infoTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: colors.text,
     marginBottom: 16,
   },
   infoRow: {
@@ -219,26 +197,52 @@ const styles = StyleSheet.create({
   infoLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.muted,
     marginRight: 8,
     minWidth: 80,
   },
   infoValue: {
     fontSize: 14,
-    color: colors.text,
     flex: 1,
   },
-  logoutButton: {
-    backgroundColor: colors.danger,
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    marginTop: 8,
+  settingsCard: {
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  logoutButtonText: {
-    color: colors.surface,
+  settingsTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 16,
+  },
+  settingRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  settingLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  settingIcon: {
+    marginRight: 12,
+  },
+  settingTextContainer: {
+    flex: 1,
+  },
+  settingLabel: {
     fontSize: 16,
     fontWeight: '600',
+    marginBottom: 2,
+  },
+  settingDescription: {
+    fontSize: 12,
   },
 });
 
