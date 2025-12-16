@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Alert,
   Switch,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
@@ -70,7 +71,14 @@ export default function ProviderProfileScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['top']}>
       <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.muted }]}>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Profile</Text>
+        <View style={styles.headerLeft}>
+          <Image 
+            source={require('@/assets/images/logo3.png')} 
+            style={styles.headerLogo}
+            resizeMode="contain"
+          />
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Profile</Text>
+        </View>
         <TouchableOpacity onPress={handleLogout} style={styles.logoutHeaderButton}>
           <Ionicons name="log-out-outline" size={20} color={colors.danger} />
           <Text style={[styles.logoutHeaderText, { color: colors.danger }]}>Logout</Text>
@@ -159,6 +167,15 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingTop: 8,
     borderBottomWidth: 1,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  headerLogo: {
+    width: 32,
+    height: 32,
   },
   headerTitle: {
     fontSize: 20,

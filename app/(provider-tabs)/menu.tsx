@@ -1,21 +1,23 @@
-import React, { useState, useRef } from 'react';
+import { useTheme } from '@/contexts/ThemeContext';
+import { api, getUser, Menu } from '@/utils/api';
+import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { router, useFocusEffect } from 'expo-router';
+import React, { useRef, useState } from 'react';
 import {
-  View,
+  Alert,
+  Image,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  ScrollView,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  ScrollView,
-  Alert,
-  Modal,
-  KeyboardAvoidingView,
-  Platform,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '@/contexts/ThemeContext';
-import { api, Menu, getUser } from '@/utils/api';
 
 export default function ProviderMenuScreen() {
   const { colors } = useTheme();
@@ -32,6 +34,8 @@ export default function ProviderMenuScreen() {
     riceOnlyPrice: '',
   });
   const [providerId, setProviderId] = useState<string>('');
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const scrollViewRef = useRef<ScrollView>(null);
   const inputRefs = useRef<{ [key: string]: TextInput | null }>({});
 
@@ -74,6 +78,15 @@ export default function ProviderMenuScreen() {
     setLoading(true);
     try {
       const response = await api.getMenus();
+      console.log('📦 [loadMenus] Response received:', { count: response.count, menusLength: response.menus?.length });
+      
+      // Ensure menus array exists
+      if (!response.menus || !Array.isArray(response.menus)) {
+        console.warn('⚠️ [loadMenus] menus array is missing or invalid');
+        setMenus([]);
+        return;
+      }
+      
       console.log('📦 [loadMenus] All menus received:', response.menus.length);
       
       // Filter menus for current provider
@@ -111,22 +124,52 @@ export default function ProviderMenuScreen() {
   };
 
   const handleAddMenu = () => {
-    // Set today's date as default
-    const today = new Date().toISOString().split('T')[0];
+    // Always get a fresh today's date to ensure it's current
+    // Use local date components directly to avoid any timezone conversion issues
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    const day = now.getDate();
+    
+    // Create date object using local components (this avoids timezone issues)
+    const today = new Date(year, month, day, 0, 0, 0, 0);
+    
+    // Format date as YYYY-MM-DD using the same local components
+    const monthStr = String(month + 1).padStart(2, '0');
+    const dayStr = String(day).padStart(2, '0');
+    const todayString = `${year}-${monthStr}-${dayStr}`;
+    
+    console.log('📅 [handleAddMenu] Current time:', now);
+    console.log('📅 [handleAddMenu] Local components - Year:', year, 'Month:', month + 1, 'Day:', day);
+    console.log('📅 [handleAddMenu] Today date object:', today);
+    console.log('📅 [handleAddMenu] Formatted date string:', todayString);
+    
+    // Set both selectedDate and formData.date to ensure consistency
+    // Use a fresh Date object created from local components
+    setSelectedDate(new Date(year, month, day, 0, 0, 0, 0));
     setEditingMenuId(null);
     setFormData({
-      date: today,
+      date: todayString,
       sabjis: [''],
       fullPrice: '',
       halfPrice: '',
       riceOnlyPrice: '',
     });
+    setShowDatePicker(false); // Reset date picker visibility
     setModalVisible(true);
   };
 
   const handleEditMenu = (menu: Menu) => {
     // Format date for input (YYYY-MM-DD)
-    const dateStr = new Date(menu.date).toISOString().split('T')[0];
+    const menuDate = new Date(menu.date);
+    menuDate.setHours(0, 0, 0, 0);
+    // Format date as YYYY-MM-DD using local date components to avoid timezone issues
+    const year = menuDate.getFullYear();
+    const month = String(menuDate.getMonth() + 1).padStart(2, '0');
+    const day = String(menuDate.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
+    console.log('📅 [handleEditMenu] Menu date:', menu.date, 'Parsed as:', menuDate, 'Formatted as:', dateStr);
+    setSelectedDate(menuDate);
     
     setEditingMenuId(menu._id);
     setFormData({
@@ -159,6 +202,9 @@ export default function ProviderMenuScreen() {
               await api.deleteMenu(menuId, providerId);
               Alert.alert('Success', 'Menu deleted successfully');
               await loadMenus();
+              // Navigate back to provider dashboard so the Orders Summary
+              // card refreshes immediately with updated data
+              router.push('/(provider-tabs)');
             } catch (error: any) {
               Alert.alert('Error', error.message || 'Failed to delete menu');
             } finally {
@@ -228,9 +274,48 @@ export default function ProviderMenuScreen() {
 
     setLoading(true);
     try {
+      // Ensure date is properly formatted as YYYY-MM-DD
+      // Always prefer formData.date as it's the source of truth (formatted string)
+      let formattedDate = formData.date;
+      
+      if (!formData.date) {
+        Alert.alert('Error', 'Date is required');
+        setLoading(false);
+        return;
+      }
+      
+      // Check if date is already in YYYY-MM-DD format
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      if (dateRegex.test(formData.date)) {
+        // Already in correct format, use as is - this is the preferred path
+        formattedDate = formData.date;
+        console.log('✅ [handleSaveMenu] Using formData.date directly:', formattedDate);
+      } else {
+        // Fallback: Try to parse and format it using local date components
+        console.warn('⚠️ [handleSaveMenu] formData.date is not in YYYY-MM-DD format, parsing:', formData.date);
+        const dateObj = new Date(formData.date);
+        if (!isNaN(dateObj.getTime())) {
+          const year = dateObj.getFullYear();
+          const month = dateObj.getMonth();
+          const day = dateObj.getDate();
+          const monthStr = String(month + 1).padStart(2, '0');
+          const dayStr = String(day).padStart(2, '0');
+          formattedDate = `${year}-${monthStr}-${dayStr}`;
+          console.log('📅 [handleSaveMenu] Parsed and reformatted date:', formattedDate);
+        } else {
+          Alert.alert('Error', 'Invalid date format');
+          setLoading(false);
+          return;
+        }
+      }
+      
+      console.log('📅 [handleSaveMenu] Final date to send to API:', formattedDate);
+      console.log('📅 [handleSaveMenu] formData.date:', formData.date);
+      console.log('📅 [handleSaveMenu] selectedDate:', selectedDate);
+      
       const menuPayload = {
         providerId,
-        date: formData.date,
+        date: formattedDate,
         sabjis,
         prices: {
           full: fullPrice,
@@ -251,6 +336,7 @@ export default function ProviderMenuScreen() {
 
       setModalVisible(false);
       setEditingMenuId(null);
+      setShowDatePicker(false);
       // Refresh menus list
       await loadMenus();
     } catch (error: any) {
@@ -270,10 +356,52 @@ export default function ProviderMenuScreen() {
     });
   };
 
+  const formatDateForDisplay = (date: Date) => {
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
+  };
+
+  const handleDateChange = (event: any, date?: Date) => {
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false);
+    }
+    if (date) {
+      // Use local date components to avoid timezone issues
+      const year = date.getFullYear();
+      const month = date.getMonth();
+      const day = date.getDate();
+      
+      // Create a new date object using local components
+      const localDate = new Date(year, month, day, 0, 0, 0, 0);
+      setSelectedDate(localDate);
+      
+      // Format date as YYYY-MM-DD using the same local components
+      const monthStr = String(month + 1).padStart(2, '0');
+      const dayStr = String(day).padStart(2, '0');
+      const dateString = `${year}-${monthStr}-${dayStr}`;
+      
+      console.log('📅 [handleDateChange] Date picker selected:', date);
+      console.log('📅 [handleDateChange] Local components - Year:', year, 'Month:', month + 1, 'Day:', day);
+      console.log('📅 [handleDateChange] Formatted date string:', dateString);
+      
+      setFormData({ ...formData, date: dateString });
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Manage Menu</Text>
+        <View style={styles.headerLeft}>
+          <Image 
+            source={require('@/assets/images/logo3.png')} 
+            style={styles.headerLogo}
+            resizeMode="contain"
+          />
+          <Text style={styles.headerTitle}>Manage Menu</Text>
+        </View>
         <TouchableOpacity
           style={styles.addButton}
           onPress={handleAddMenu}
@@ -301,7 +429,6 @@ export default function ProviderMenuScreen() {
                 <View style={styles.menuHeader}>
                   <View style={styles.menuHeaderLeft}>
                     <Text style={styles.menuDate}>{formatDate(menu.date)}</Text>
-                    <Text style={styles.menuId}>Menu ID: {menu._id.slice(-6)}</Text>
                   </View>
                   <View style={styles.menuActions}>
                     <TouchableOpacity
@@ -365,7 +492,10 @@ export default function ProviderMenuScreen() {
           <TouchableOpacity
             style={styles.modalBackdrop}
             activeOpacity={1}
-            onPress={() => setModalVisible(false)}
+            onPress={() => {
+              setModalVisible(false);
+              setShowDatePicker(false);
+            }}
           />
           <SafeAreaView edges={['bottom']} style={styles.modalSafeArea}>
             <KeyboardAvoidingView
@@ -381,6 +511,7 @@ export default function ProviderMenuScreen() {
                 <TouchableOpacity onPress={() => {
                   setModalVisible(false);
                   setEditingMenuId(null);
+                  setShowDatePicker(false);
                 }}>
                   <Ionicons name="close" size={24} color={colors.text} />
                 </TouchableOpacity>
@@ -396,16 +527,30 @@ export default function ProviderMenuScreen() {
               >
                 <View style={styles.inputContainer}>
                   <Text style={styles.label}>Date</Text>
-                  <TextInput
-                    ref={(ref) => (inputRefs.current['date'] = ref)}
-                    style={styles.input}
-                    placeholder="YYYY-MM-DD"
-                    placeholderTextColor={colors.muted}
-                    value={formData.date}
-                    onChangeText={(text) => setFormData({ ...formData, date: text })}
-                    onFocus={() => scrollToInput('date')}
-                  />
-                  <Text style={styles.hint}>Format: YYYY-MM-DD (e.g., 2024-01-15)</Text>
+                  <TouchableOpacity
+                    style={styles.dateInput}
+                    onPress={() => {
+                      if (Platform.OS === 'android') {
+                        setShowDatePicker(true);
+                      } else {
+                        setShowDatePicker(!showDatePicker);
+                      }
+                    }}
+                  >
+                    <Text style={[styles.dateInputText, !formData.date && { color: colors.muted }]}>
+                      {formData.date ? formatDateForDisplay(selectedDate) : 'Select date'}
+                    </Text>
+                    <Ionicons name="calendar-outline" size={20} color={colors.brand} />
+                  </TouchableOpacity>
+                  {showDatePicker && (
+                    <DateTimePicker
+                      value={selectedDate}
+                      mode="date"
+                      display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                      onChange={handleDateChange}
+                      minimumDate={new Date()}
+                    />
+                  )}
                 </View>
 
                 <View style={styles.inputContainer}>
@@ -491,7 +636,10 @@ export default function ProviderMenuScreen() {
               <View style={styles.modalFooter}>
                 <TouchableOpacity
                   style={styles.cancelButton}
-                  onPress={() => setModalVisible(false)}
+                  onPress={() => {
+                    setModalVisible(false);
+                    setShowDatePicker(false);
+                  }}
                 >
                   <Text style={styles.cancelButtonText}>Cancel</Text>
                 </TouchableOpacity>
@@ -531,6 +679,15 @@ const getStyles = (colors: any) => StyleSheet.create({
     backgroundColor: colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: colors.muted,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  headerLogo: {
+    width: 32,
+    height: 32,
   },
   headerTitle: {
     fontSize: 20,
@@ -733,6 +890,20 @@ const getStyles = (colors: any) => StyleSheet.create({
     fontSize: 16,
     color: colors.text,
     backgroundColor: colors.surface,
+  },
+  dateInput: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.muted,
+    borderRadius: 10,
+    padding: 12,
+    backgroundColor: colors.surface,
+  },
+  dateInputText: {
+    fontSize: 16,
+    color: colors.text,
   },
   hint: {
     fontSize: 12,

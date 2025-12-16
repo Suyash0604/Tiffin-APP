@@ -1,15 +1,21 @@
 {
   "expo": {
-    "name": "Tiffin-APP",
-    "slug": "Tiffin-APP",
+    "name": "TiffinHub",
+    "slug": "tiffinhub",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/logo3.png",
-    "scheme": "tiffinapp",
+    "scheme": "tiffinhub",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "jsEngine": "hermes",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.suyash12.TiffinHub",
+      "icon": "./assets/images/logo3.png",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -24,7 +30,8 @@
         "backgroundColor": "#FFF8F0"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.suyash_12.TiffinHub"
     },
     "web": {
       "output": "static",
@@ -48,6 +55,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "a7b4318c-75ae-4c32-983e-ccf817beed31"
+      }
     }
   }
 }

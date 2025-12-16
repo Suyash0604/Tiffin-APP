@@ -1,4 +1,3 @@
-import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 
 // Light theme colors
@@ -33,13 +32,10 @@ const THEME_STORAGE_KEY = 'app_theme';
 
 // Get API Base URL
 const getAPIBaseURL = () => {
-  if (__DEV__) {
-    if (Platform.OS === 'web') {
-      return 'http://localhost:3000';
-    }
-    return 'http://192.168.1.3:3000';
-  }
-  return 'http://localhost:3000';
+  // Temporarily force production URL for testing
+  // return 'https://tiffin-backend-zo3a.onrender.com';
+  return 'http://192.168.1.9:3000';
+  // Original code...
 };
 
 export const API_BASE_URL = getAPIBaseURL();

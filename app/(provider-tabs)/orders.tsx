@@ -6,6 +6,7 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
+  Image,
   Modal,
   Platform,
 } from 'react-native';
@@ -214,7 +215,14 @@ export default function ProviderOrdersScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Orders</Text>
+        <View style={styles.headerLeft}>
+          <Image 
+            source={require('@/assets/images/logo3.png')} 
+            style={styles.headerLogo}
+            resizeMode="contain"
+          />
+          <Text style={styles.headerTitle}>Orders</Text>
+        </View>
         <TouchableOpacity onPress={handleFilterPress} style={styles.filterButton}>
           <Ionicons name="filter-outline" size={22} color={colors.brand} />
         </TouchableOpacity>
@@ -489,6 +497,15 @@ const getStyles = (colors: any) => StyleSheet.create({
     backgroundColor: colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: colors.muted,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  headerLogo: {
+    width: 32,
+    height: 32,
   },
   headerTitle: {
     fontSize: 20,

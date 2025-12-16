@@ -7,6 +7,7 @@ import {
   ScrollView,
   Alert,
   Modal,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from 'expo-router';
@@ -50,14 +51,57 @@ export default function MenuScreen() {
     setLoading(true);
     try {
       const response = await api.getMenus();
-      // Filter menus for today and future dates
+      console.log('📦 [loadMenus] Response received:', { count: response.count, menusLength: response.menus?.length });
+      
+      // Ensure menus array exists
+      if (!response.menus || !Array.isArray(response.menus)) {
+        console.warn('⚠️ [loadMenus] menus array is missing or invalid');
+        setMenus([]);
+        return;
+      }
+      
+      // Filter menus - show active menus from today and future dates
+      // Also include menus from the past 7 days if they're still active
+      // Use UTC dates to avoid timezone issues
       const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      const todayUTC = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
+      const sevenDaysAgoUTC = new Date(todayUTC);
+      sevenDaysAgoUTC.setUTCDate(sevenDaysAgoUTC.getUTCDate() - 7);
+      
+      console.log('📅 [loadMenus] Date filter - Today (UTC):', todayUTC.toISOString(), 'Seven days ago (UTC):', sevenDaysAgoUTC.toISOString());
+      
       const availableMenus = response.menus.filter((menu) => {
-        const menuDate = new Date(menu.date);
-        menuDate.setHours(0, 0, 0, 0);
-        return menuDate >= today;
+        if (!menu || !menu.date) {
+          console.warn('⚠️ [loadMenus] Invalid menu item:', menu);
+          return false;
+        }
+        
+        // Check if menu is active (if isActive field exists)
+        if (menu.hasOwnProperty('isActive') && !menu.isActive) {
+          console.log('⏭️ [loadMenus] Menu filtered out (not active):', menu._id);
+          return false;
+        }
+        
+        // Check if menu is deleted
+        if (menu.deletedAt) {
+          console.log('⏭️ [loadMenus] Menu filtered out (deleted):', menu._id);
+          return false;
+        }
+        
+        // Parse menu date and extract just the date part (YYYY-MM-DD) to avoid timezone issues
+        const menuDateStr = menu.date.split('T')[0]; // Get YYYY-MM-DD part
+        const [year, month, day] = menuDateStr.split('-').map(Number);
+        const menuDateUTC = new Date(Date.UTC(year, month - 1, day));
+        
+        // Show menus from the past 7 days onwards (today and future)
+        const isWithinRange = menuDateUTC >= sevenDaysAgoUTC;
+        
+        console.log(`📅 [loadMenus] Menu ${menu._id} - Date string: ${menuDateStr}, Date (UTC): ${menuDateUTC.toISOString()}, Within range: ${isWithinRange}`);
+        
+        return isWithinRange;
       });
+      
+      console.log('✅ [loadMenus] Available menus after filtering:', availableMenus.length);
       setMenus(availableMenus);
     } catch (error: any) {
       console.error('Error loading menus:', error);
@@ -215,7 +259,14 @@ export default function MenuScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Available Menus</Text>
+        <View style={styles.headerLeft}>
+          <Image 
+            source={require('@/assets/images/logo3.png')} 
+            style={styles.headerLogo}
+            resizeMode="contain"
+          />
+          <Text style={styles.headerTitle}>Available Menus</Text>
+        </View>
       </View>
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
@@ -232,18 +283,22 @@ export default function MenuScreen() {
         ) : (
           <View style={styles.menuList}>
             {menus.map((menu) => (
-              <TouchableOpacity
+              <View
                 key={menu._id}
                 style={styles.menuCard}
-                onPress={() => handleOrderMenu(menu)}
-                activeOpacity={0.7}
               >
                 <View style={styles.menuHeader}>
                   <View style={styles.menuHeaderLeft}>
                     <Text style={styles.providerName}>{getProviderName(menu)}</Text>
                     <Text style={styles.menuDate}>{formatDate(menu.date)}</Text>
                   </View>
-                  <Ionicons name="chevron-forward" size={20} color={colors.muted} />
+                  <TouchableOpacity
+                    style={styles.orderButton}
+                    onPress={() => handleOrderMenu(menu)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.orderButtonText}>Order</Text>
+                  </TouchableOpacity>
                 </View>
 
                 <View style={styles.sabjisTagsContainer}>
@@ -268,7 +323,7 @@ export default function MenuScreen() {
                     <Text style={styles.priceTagValue}>₹{menu.prices.riceOnly}</Text>
                   </View>
                 </View>
-              </TouchableOpacity>
+              </View>
             ))}
           </View>
         )}
@@ -447,6 +502,15 @@ const getStyles = (colors: any) => StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.muted,
   },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  headerLogo: {
+    width: 32,
+    height: 32,
+  },
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
@@ -486,7 +550,8 @@ const getStyles = (colors: any) => StyleSheet.create({
   menuCard: {
     backgroundColor: colors.surface,
     borderRadius: 16,
-    padding: 12,
+    padding: 16,
+    marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -555,6 +620,18 @@ const getStyles = (colors: any) => StyleSheet.create({
   priceTagValue: {
     fontSize: 12,
     fontWeight: 'bold',
+    color: colors.surface,
+  },
+  orderButton: {
+    backgroundColor: colors.brand,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    alignSelf: 'flex-start',
+  },
+  orderButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
     color: colors.surface,
   },
   modalOverlay: {

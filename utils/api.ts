@@ -34,6 +34,8 @@ export interface Menu {
     half: number;
     riceOnly: number;
   };
+  isActive?: boolean;
+  deletedAt?: string | null;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -458,6 +460,12 @@ export const api = {
 
       const data = await response.json();
       console.log('✅ [getMenus] Success:', { count: data.count });
+      console.log('✅ [getMenus] Full response:', JSON.stringify(data, null, 2));
+      // Ensure menus array exists, default to empty array if not present
+      if (!data.menus || !Array.isArray(data.menus)) {
+        console.warn('⚠️ [getMenus] menus array missing or invalid, defaulting to empty array');
+        data.menus = [];
+      }
       return data;
     } catch (error: any) {
       console.error('🔴 [getMenus] Fetch error:', error);

@@ -131,11 +131,17 @@ export default function DashboardScreen() {
             <Text style={styles.actionIcon}>📦</Text>
             <Text style={styles.actionText}>My Orders</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionCard}>
+          <TouchableOpacity 
+            style={styles.actionCard}
+            onPress={() => router.push('/(tabs)/favorites')}
+          >
             <Text style={styles.actionIcon}>⭐</Text>
             <Text style={styles.actionText}>Favorites</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionCard}>
+          <TouchableOpacity 
+            style={styles.actionCard}
+            onPress={() => router.push('/(tabs)/history')}
+          >
             <Text style={styles.actionIcon}>📊</Text>
             <Text style={styles.actionText}>History</Text>
           </TouchableOpacity>

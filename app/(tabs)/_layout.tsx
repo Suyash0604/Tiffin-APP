@@ -89,6 +89,26 @@ export default function TabsLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="favorites"
+        options={{
+          href: null, // Hide this tab from the tab bar
+          title: 'Favorites',
+          tabBarIcon: ({ color, focused, size }) => (
+            <Ionicons name={focused ? "star" : "star-outline"} size={24} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="history"
+        options={{
+          href: null, // Hide this tab from the tab bar
+          title: 'History',
+          tabBarIcon: ({ color, focused, size }) => (
+            <Ionicons name={focused ? "time" : "time-outline"} size={24} color={color} />
+          ),
+        }}
+      />
     </Tabs>
   );
 }

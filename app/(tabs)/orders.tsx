@@ -6,6 +6,7 @@ import { useFocusEffect } from 'expo-router';
 import React, { useState } from 'react';
 import {
   Alert,
+  Image,
   Modal,
   Platform,
   ScrollView,
@@ -173,7 +174,14 @@ export default function OrdersScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>My Orders</Text>
+        <View style={styles.headerLeft}>
+          <Image 
+            source={require('@/assets/images/logo3.png')} 
+            style={styles.headerLogo}
+            resizeMode="contain"
+          />
+          <Text style={styles.headerTitle}>My Orders</Text>
+        </View>
         <TouchableOpacity onPress={handleFilterPress} style={styles.filterButton}>
           <Ionicons name="filter-outline" size={22} color={colors.brand} />
         </TouchableOpacity>
@@ -406,6 +414,15 @@ const getStyles = (colors: any) => StyleSheet.create({
     backgroundColor: colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: colors.muted,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  headerLogo: {
+    width: 32,
+    height: 32,
   },
   headerTitle: {
     fontSize: 20,
