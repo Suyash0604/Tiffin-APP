@@ -1,8 +1,8 @@
-import { Tabs } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Platform } from 'react-native';
 import { useTheme } from '@/contexts/ThemeContext';
+import { Ionicons } from '@expo/vector-icons';
+import { Tabs } from 'expo-router';
+import { Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
@@ -107,6 +107,24 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, focused, size }) => (
             <Ionicons name={focused ? "time" : "time-outline"} size={24} color={color} />
           ),
+        }}
+      />
+      <Tabs.Screen
+        name="about"
+        options={{
+          href: null, // Hide this tab from the tab bar
+        }}
+      />
+      <Tabs.Screen
+        name="contact"
+        options={{
+          href: null, // Hide this tab from the tab bar
+        }}
+      />
+      <Tabs.Screen
+        name="security"
+        options={{
+          href: null, // Hide this tab from the tab bar
         }}
       />
     </Tabs>
