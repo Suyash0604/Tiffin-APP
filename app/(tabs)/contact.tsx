@@ -223,7 +223,7 @@ const getStyles = (colors: any) => StyleSheet.create({
   },
   content: {
     padding: 16,
-    paddingBottom: 32,
+    paddingBottom: 100, // Extra padding to account for bottom tab bar
   },
   contactCard: {
     borderRadius: 16,
