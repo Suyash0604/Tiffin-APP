@@ -190,7 +190,10 @@ export default function ProfileScreen() {
             <Text style={[styles.settingsTitle, { color: colors.text }]}>Help & Support</Text>
           </View>
 
-          <TouchableOpacity style={styles.settingRow}>
+          <TouchableOpacity 
+            style={styles.settingRow}
+            onPress={() => router.push('/(tabs)/help')}
+          >
             <View style={styles.settingLeft}>
               <Ionicons name="document-text-outline" size={24} color={colors.brand} style={styles.settingIcon} />
               <View style={styles.settingTextContainer}>

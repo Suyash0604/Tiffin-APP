@@ -127,6 +127,12 @@ export default function TabsLayout() {
           href: null, // Hide this tab from the tab bar
         }}
       />
+      <Tabs.Screen
+        name="help"
+        options={{
+          href: null, // Hide this tab from the tab bar
+        }}
+      />
     </Tabs>
   );
 }
