@@ -4,13 +4,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  Alert,
-  Animated,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Alert,
+    Animated,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -227,28 +227,28 @@ export default function ProviderDashboardScreen() {
               style={styles.actionCard}
               onPress={() => router.push('/(provider-tabs)/menu')}
             >
-              <Text style={styles.actionIcon}>🍽️</Text>
+              <Ionicons name="restaurant" size={32} color={colors.brand} style={styles.actionIcon} />
               <Text style={styles.actionText}>Manage Menu</Text>
             </TouchableOpacity>
             <TouchableOpacity 
               style={styles.actionCard}
               onPress={() => router.push('/(provider-tabs)/orders')}
             >
-              <Text style={styles.actionIcon}>📦</Text>
+              <Ionicons name="receipt" size={32} color={colors.brand} style={styles.actionIcon} />
               <Text style={styles.actionText}>View Orders</Text>
             </TouchableOpacity>
             <TouchableOpacity 
               style={styles.actionCard}
               onPress={() => router.push('/(provider-tabs)/analytics')}
             >
-              <Text style={styles.actionIcon}>📊</Text>
+              <Ionicons name="analytics" size={32} color={colors.brand} style={styles.actionIcon} />
               <Text style={styles.actionText}>Analytics</Text>
             </TouchableOpacity>
             <TouchableOpacity 
               style={styles.actionCard}
               onPress={() => router.push('/(provider-tabs)/profile')}
             >
-              <Text style={styles.actionIcon}>⚙️</Text>
+              <Ionicons name="settings" size={32} color={colors.brand} style={styles.actionIcon} />
               <Text style={styles.actionText}>Profile</Text>
             </TouchableOpacity>
           </View>
@@ -439,7 +439,6 @@ const getStyles = (colors: any) => StyleSheet.create({
     elevation: 2,
   },
   actionIcon: {
-    fontSize: 28,
     marginBottom: 6,
   },
   actionText: {

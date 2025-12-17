@@ -1,19 +1,19 @@
+import { useTheme } from '@/contexts/ThemeContext';
+import { api, getUser, Menu } from '@/utils/api';
+import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  ScrollView,
-  Alert,
-  Modal,
-  Image,
+    Alert,
+    Image,
+    Modal,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '@/contexts/ThemeContext';
-import { api, Menu, getUser, User } from '@/utils/api';
 
 export default function MenuScreen() {
   const { colors } = useTheme();
@@ -60,15 +60,14 @@ export default function MenuScreen() {
         return;
       }
       
-      // Filter menus - show active menus from today and future dates
-      // Also include menus from the past 7 days if they're still active
+      // Filter menus - show only today's date menu
       // Use UTC dates to avoid timezone issues
       const today = new Date();
       const todayUTC = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
-      const sevenDaysAgoUTC = new Date(todayUTC);
-      sevenDaysAgoUTC.setUTCDate(sevenDaysAgoUTC.getUTCDate() - 7);
+      const tomorrowUTC = new Date(todayUTC);
+      tomorrowUTC.setUTCDate(tomorrowUTC.getUTCDate() + 1);
       
-      console.log('📅 [loadMenus] Date filter - Today (UTC):', todayUTC.toISOString(), 'Seven days ago (UTC):', sevenDaysAgoUTC.toISOString());
+      console.log('📅 [loadMenus] Date filter - Today (UTC):', todayUTC.toISOString());
       
       const availableMenus = response.menus.filter((menu) => {
         if (!menu || !menu.date) {
@@ -93,12 +92,12 @@ export default function MenuScreen() {
         const [year, month, day] = menuDateStr.split('-').map(Number);
         const menuDateUTC = new Date(Date.UTC(year, month - 1, day));
         
-        // Show menus from the past 7 days onwards (today and future)
-        const isWithinRange = menuDateUTC >= sevenDaysAgoUTC;
+        // Show only today's menu (menu date must be today)
+        const isToday = menuDateUTC >= todayUTC && menuDateUTC < tomorrowUTC;
         
-        console.log(`📅 [loadMenus] Menu ${menu._id} - Date string: ${menuDateStr}, Date (UTC): ${menuDateUTC.toISOString()}, Within range: ${isWithinRange}`);
+        console.log(`📅 [loadMenus] Menu ${menu._id} - Date string: ${menuDateStr}, Date (UTC): ${menuDateUTC.toISOString()}, Is today: ${isToday}`);
         
-        return isWithinRange;
+        return isToday;
       });
       
       console.log('✅ [loadMenus] Available menus after filtering:', availableMenus.length);

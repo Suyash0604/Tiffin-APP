@@ -1,21 +1,21 @@
+import { useTheme } from '@/contexts/ThemeContext';
+import { api, getUser, Order } from '@/utils/api';
+import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { useFocusEffect } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  ScrollView,
-  Alert,
-  Image,
-  Modal,
-  Platform,
+    Alert,
+    Image,
+    Modal,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '@/contexts/ThemeContext';
-import { api, Order, getUser } from '@/utils/api';
 
 export default function ProviderOrdersScreen() {
   const { colors } = useTheme();
@@ -551,13 +551,14 @@ const getStyles = (colors: any) => StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: 20,
     padding: 16,
+    borderWidth: 1,
+    borderColor: colors.muted + '40',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    elevation: 4,
-    borderWidth: 1,
-    borderColor: colors.muted + '30',
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+    overflow: 'hidden',
   },
   orderHeader: {
     flexDirection: 'row',
@@ -628,6 +629,8 @@ const getStyles = (colors: any) => StyleSheet.create({
     borderRadius: 12,
     padding: 10,
     gap: 10,
+    borderWidth: 1,
+    borderColor: colors.muted + '30',
   },
   customerRow: {
     flexDirection: 'row',
@@ -691,6 +694,8 @@ const getStyles = (colors: any) => StyleSheet.create({
     backgroundColor: colors.bg,
     borderRadius: 12,
     padding: 10,
+    borderWidth: 1,
+    borderColor: colors.muted + '30',
   },
   itemDetails: {
     flexDirection: 'row',

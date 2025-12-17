@@ -1,15 +1,16 @@
 import { useTheme } from '@/contexts/ThemeContext';
 import { clearSession, fetchAndStoreUser, User } from '@/utils/api';
+import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  Alert,
-  Animated,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
+    Alert,
+    Animated,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
 
 export default function DashboardScreen() {
@@ -121,28 +122,28 @@ export default function DashboardScreen() {
             style={styles.actionCard}
             onPress={() => router.push('/(tabs)/menu')}
           >
-            <Text style={styles.actionIcon}>🍽️</Text>
+            <Ionicons name="restaurant" size={32} color={colors.brand} style={styles.actionIcon} />
             <Text style={styles.actionText}>View Menu</Text>
           </TouchableOpacity>
           <TouchableOpacity 
             style={styles.actionCard}
             onPress={() => router.push('/(tabs)/orders')}
           >
-            <Text style={styles.actionIcon}>📦</Text>
+            <Ionicons name="receipt" size={32} color={colors.brand} style={styles.actionIcon} />
             <Text style={styles.actionText}>My Orders</Text>
           </TouchableOpacity>
           <TouchableOpacity 
             style={styles.actionCard}
             onPress={() => router.push('/(tabs)/favorites')}
           >
-            <Text style={styles.actionIcon}>⭐</Text>
+            <Ionicons name="star" size={32} color={colors.brand} style={styles.actionIcon} />
             <Text style={styles.actionText}>Favorites</Text>
           </TouchableOpacity>
           <TouchableOpacity 
             style={styles.actionCard}
             onPress={() => router.push('/(tabs)/history')}
           >
-            <Text style={styles.actionIcon}>📊</Text>
+            <Ionicons name="time" size={32} color={colors.brand} style={styles.actionIcon} />
             <Text style={styles.actionText}>History</Text>
           </TouchableOpacity>
         </View>
@@ -233,7 +234,6 @@ const getStyles = (colors: any) => StyleSheet.create({
     elevation: 2,
   },
   actionIcon: {
-    fontSize: 32,
     marginBottom: 8,
   },
   actionText: {

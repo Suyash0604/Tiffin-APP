@@ -5,15 +5,15 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { useFocusEffect } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  Alert,
-  Image,
-  Modal,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Alert,
+    Image,
+    Modal,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -30,9 +30,22 @@ export default function OrdersScreen() {
   const [showToDatePicker, setShowToDatePicker] = useState(false);
   const [isFiltered, setIsFiltered] = useState(false);
 
+  const formatDateForAPI = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   useFocusEffect(
     React.useCallback(() => {
-      loadOrders();
+      // On load, apply today's date filter by default
+      const today = new Date();
+      const todayStr = formatDateForAPI(today);
+      setFromDate(today);
+      setToDate(today);
+      setIsFiltered(true);
+      loadOrders(todayStr, todayStr);
     }, [])
   );
 
@@ -88,13 +101,6 @@ export default function OrdersScreen() {
     });
   };
 
-  const formatDateForAPI = (date: Date) => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
-
   const getProviderName = (order: Order) => {
     if (typeof order.providerId === 'object' && order.providerId) {
       return (order.providerId as any).name || 'Provider';
@@ -138,11 +144,12 @@ export default function OrdersScreen() {
 
   const handleClearFilter = () => {
     const today = new Date();
+    const todayStr = formatDateForAPI(today);
     setFromDate(today);
     setToDate(today);
-    setIsFiltered(false);
+    setIsFiltered(true); // Keep filtered state but reset to today
     setShowFilterModal(false);
-    loadOrders(); // Load all orders without filters
+    loadOrders(todayStr, todayStr); // Load today's orders
   };
 
   const handleFromDateChange = (event: any, selectedDate?: Date) => {

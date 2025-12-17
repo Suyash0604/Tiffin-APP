@@ -800,5 +800,192 @@ export const api = {
       throw error;
     }
   },
+
+  // Analytics APIs
+  async getMonthlyRevenue(providerId: string, year?: number): Promise<{
+    success: boolean;
+    year: number;
+    data: Array<{
+      revenue: number;
+      orders: number;
+      month: number;
+    }>;
+  }> {
+    const url = `${API_BASE_URL}/analytic/monthly-revenue?providerId=${providerId}${year ? `&year=${year}` : ''}`;
+    
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Failed to fetch monthly revenue' }));
+        throw new Error(errorData.message || 'Failed to fetch monthly revenue');
+      }
+
+      return await response.json();
+    } catch (error: any) {
+      console.error('🔴 [getMonthlyRevenue] Error:', error);
+      throw error;
+    }
+  },
+
+  async getOverallSummary(providerId: string): Promise<{
+    success: boolean;
+    data: {
+      totalRevenue: number;
+      totalOrders: number;
+    };
+  }> {
+    const url = `${API_BASE_URL}/analytic/overall-summary?providerId=${providerId}`;
+    
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Failed to fetch overall summary' }));
+        throw new Error(errorData.message || 'Failed to fetch overall summary');
+      }
+
+      return await response.json();
+    } catch (error: any) {
+      console.error('🔴 [getOverallSummary] Error:', error);
+      throw error;
+    }
+  },
+
+  async getBestSellers(providerId: string): Promise<{
+    success: boolean;
+    data: {
+      topMealType: {
+        mealType: string;
+        quantity: number;
+      };
+      topSabjis: Array<{
+        sabji: string;
+        quantity: number;
+      }>;
+    };
+  }> {
+    const url = `${API_BASE_URL}/analytic/best-sellers?providerId=${providerId}`;
+    
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Failed to fetch best sellers' }));
+        throw new Error(errorData.message || 'Failed to fetch best sellers');
+      }
+
+      return await response.json();
+    } catch (error: any) {
+      console.error('🔴 [getBestSellers] Error:', error);
+      throw error;
+    }
+  },
+
+  async getDailyRevenueTrend(providerId: string, month?: number, year?: number): Promise<{
+    success: boolean;
+    data: Array<{
+      revenue: number;
+      day: number;
+    }>;
+  }> {
+    const params = new URLSearchParams({ providerId });
+    if (month) params.append('month', month.toString());
+    if (year) params.append('year', year.toString());
+    
+    const url = `${API_BASE_URL}/analytic/daily-revenue-trend?${params.toString()}`;
+    
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Failed to fetch daily revenue trend' }));
+        throw new Error(errorData.message || 'Failed to fetch daily revenue trend');
+      }
+
+      return await response.json();
+    } catch (error: any) {
+      console.error('🔴 [getDailyRevenueTrend] Error:', error);
+      throw error;
+    }
+  },
+
+  async getAvgOrderValue(providerId: string, startDate?: string, endDate?: string): Promise<{
+    success: boolean;
+    data: {
+      avgOrderValue: number;
+      totalRevenue: number;
+      totalOrders: number;
+    };
+  }> {
+    const params = new URLSearchParams({ providerId });
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    
+    const url = `${API_BASE_URL}/analytic/avg-order-value?${params.toString()}`;
+    
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Failed to fetch average order value' }));
+        throw new Error(errorData.message || 'Failed to fetch average order value');
+      }
+
+      return await response.json();
+    } catch (error: any) {
+      console.error('🔴 [getAvgOrderValue] Error:', error);
+      throw error;
+    }
+  },
+
+  async getGrowthRate(providerId: string): Promise<{
+    success: boolean;
+    data: {
+      previousRevenue: number;
+      currentRevenue: number;
+      growthPercent: number;
+    };
+  }> {
+    const url = `${API_BASE_URL}/analytic/growth-rate?providerId=${providerId}`;
+    
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Failed to fetch growth rate' }));
+        throw new Error(errorData.message || 'Failed to fetch growth rate');
+      }
+
+      return await response.json();
+    } catch (error: any) {
+      console.error('🔴 [getGrowthRate] Error:', error);
+      throw error;
+    }
+  },
 };
 
