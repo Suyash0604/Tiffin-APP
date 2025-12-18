@@ -1,8 +1,9 @@
 import { useTheme } from '@/contexts/ThemeContext';
+import { api, getUser } from '@/utils/api';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function SecurityScreen() {
@@ -14,8 +15,9 @@ export default function SecurityScreen() {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleResetPassword = () => {
+  const handleResetPassword = async () => {
     if (!currentPassword || !newPassword || !confirmPassword) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
@@ -31,21 +33,41 @@ export default function SecurityScreen() {
       return;
     }
 
-    // Frontend only - no API call
-    Alert.alert(
-      'Password Reset',
-      'Password reset request submitted successfully. You will receive an email with instructions shortly.',
-      [
-        {
-          text: 'OK',
-          onPress: () => {
-            setCurrentPassword('');
-            setNewPassword('');
-            setConfirmPassword('');
+    if (!passwordValidation?.isValid) {
+      Alert.alert('Error', 'Password does not meet security requirements');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const user = await getUser();
+      if (!user || !user.id) {
+        Alert.alert('Error', 'User not found. Please login again.');
+        router.replace('/(auth)/login');
+        return;
+      }
+
+      await api.updatePassword(user.id, currentPassword, newPassword);
+      
+      Alert.alert(
+        'Success',
+        'Password updated successfully',
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              setCurrentPassword('');
+              setNewPassword('');
+              setConfirmPassword('');
+            },
           },
-        },
-      ]
-    );
+        ]
+      );
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to update password');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const validatePassword = (password: string) => {
@@ -241,14 +263,20 @@ export default function SecurityScreen() {
               styles.resetButton,
               {
                 backgroundColor: colors.brand,
-                opacity: passwordValidation?.isValid && newPassword === confirmPassword ? 1 : 0.6,
+                opacity: (passwordValidation?.isValid && newPassword === confirmPassword && !loading) ? 1 : 0.6,
               },
             ]}
             onPress={handleResetPassword}
-            disabled={!passwordValidation?.isValid || newPassword !== confirmPassword}
+            disabled={!passwordValidation?.isValid || newPassword !== confirmPassword || loading}
           >
-            <Ionicons name="lock-closed" size={20} color="#fff" />
-            <Text style={styles.resetButtonText}>Reset Password</Text>
+            {loading ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <>
+                <Ionicons name="lock-closed" size={20} color="#fff" />
+                <Text style={styles.resetButtonText}>Reset Password</Text>
+              </>
+            )}
           </TouchableOpacity>
         </View>
 
@@ -458,3 +486,5 @@ const getStyles = (colors: any) => StyleSheet.create({
     lineHeight: 20,
   },
 });
+
+

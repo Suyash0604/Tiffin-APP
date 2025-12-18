@@ -340,3 +340,5 @@ const getStyles = (colors: any) => StyleSheet.create({
     alignItems: 'center',
   },
 });
+
+

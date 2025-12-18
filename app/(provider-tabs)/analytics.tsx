@@ -12,7 +12,7 @@ import {
     StyleSheet,
     Text,
     TouchableOpacity,
-  View,
+    View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, G, Line, Polyline, Rect, Text as SvgText } from 'react-native-svg';
@@ -55,6 +55,8 @@ export default function AnalyticsScreen() {
   const [dailyRevenue, setDailyRevenue] = useState<DailyRevenueData[]>([]);
   const [bestSellers, setBestSellers] = useState<BestSellersData | null>(null);
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [selectedDailyMonth, setSelectedDailyMonth] = useState<number>(new Date().getMonth() + 1);
+  const [selectedDailyYear, setSelectedDailyYear] = useState<number>(new Date().getFullYear());
   const [selectedDataPoint, setSelectedDataPoint] = useState<{ revenue: number; day: number; x: number; y: number } | null>(null);
   const chartDataRef = useRef<{ pointPositions: Array<{ x: number; y: number; item: DailyRevenueData; index: number }>; width: number; padding: number } | null>(null);
 
@@ -77,7 +79,7 @@ export default function AnalyticsScreen() {
         loadGrowthRate(user.id),
         loadAvgOrderValue(user.id),
         loadMonthlyRevenue(user.id, selectedYear),
-        loadDailyRevenue(user.id),
+        loadDailyRevenue(user.id, selectedDailyMonth, selectedDailyYear),
         loadBestSellers(user.id),
       ]);
     } catch (error) {
@@ -138,10 +140,9 @@ export default function AnalyticsScreen() {
     }
   };
 
-  const loadDailyRevenue = async (id: string) => {
+  const loadDailyRevenue = async (id: string, month?: number, year?: number) => {
     try {
-      const now = new Date();
-      const response = await api.getDailyRevenueTrend(id, now.getMonth() + 1, now.getFullYear());
+      const response = await api.getDailyRevenueTrend(id, month, year);
       if (response.success) {
         setDailyRevenue(response.data);
       }
@@ -165,6 +166,20 @@ export default function AnalyticsScreen() {
     setSelectedYear(year);
     if (providerId) {
       loadMonthlyRevenue(providerId, year);
+    }
+  };
+
+  const handleDailyMonthChange = (month: number) => {
+    setSelectedDailyMonth(month);
+    if (providerId) {
+      loadDailyRevenue(providerId, month, selectedDailyYear);
+    }
+  };
+
+  const handleDailyYearChange = (year: number) => {
+    setSelectedDailyYear(year);
+    if (providerId) {
+      loadDailyRevenue(providerId, selectedDailyMonth, year);
     }
   };
 
@@ -589,6 +604,56 @@ export default function AnalyticsScreen() {
             <Text style={styles.sectionTitle}>Daily Revenue Trend</Text>
             <Ionicons name="trending-up-outline" size={20} color={colors.brand} />
           </View>
+          
+          {/* Month and Year Filters */}
+          <View style={styles.filterContainer}>
+            <View style={styles.filterGroup}>
+              <Text style={[styles.filterLabel, { color: colors.muted }]}>Month:</Text>
+              <View style={[styles.filterButtons, { backgroundColor: colors.bg }]}>
+                <TouchableOpacity
+                  onPress={() => {
+                    const newMonth = selectedDailyMonth === 1 ? 12 : selectedDailyMonth - 1;
+                    handleDailyMonthChange(newMonth);
+                  }}
+                  style={styles.filterButton}
+                >
+                  <Ionicons name="chevron-back" size={16} color={colors.text} />
+                </TouchableOpacity>
+                <Text style={[styles.filterValue, { color: colors.text }]}>
+                  {new Date(2000, selectedDailyMonth - 1).toLocaleString('default', { month: 'long' })}
+                </Text>
+                <TouchableOpacity
+                  onPress={() => {
+                    const newMonth = selectedDailyMonth === 12 ? 1 : selectedDailyMonth + 1;
+                    handleDailyMonthChange(newMonth);
+                  }}
+                  style={styles.filterButton}
+                >
+                  <Ionicons name="chevron-forward" size={16} color={colors.text} />
+                </TouchableOpacity>
+              </View>
+            </View>
+            
+            <View style={styles.filterGroup}>
+              <Text style={[styles.filterLabel, { color: colors.muted }]}>Year:</Text>
+              <View style={[styles.filterButtons, { backgroundColor: colors.bg }]}>
+                <TouchableOpacity
+                  onPress={() => handleDailyYearChange(selectedDailyYear - 1)}
+                  style={styles.filterButton}
+                >
+                  <Ionicons name="chevron-back" size={16} color={colors.text} />
+                </TouchableOpacity>
+                <Text style={[styles.filterValue, { color: colors.text }]}>{selectedDailyYear}</Text>
+                <TouchableOpacity
+                  onPress={() => handleDailyYearChange(selectedDailyYear + 1)}
+                  style={styles.filterButton}
+                >
+                  <Ionicons name="chevron-forward" size={16} color={colors.text} />
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+          
           {renderLineChart(dailyRevenue)}
         </View>
 
@@ -1019,6 +1084,42 @@ const getStyles = (colors: any) => StyleSheet.create({
     color: colors.muted,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+  },
+  filterContainer: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 16,
+    flexWrap: 'wrap',
+  },
+  filterGroup: {
+    flex: 1,
+    minWidth: 140,
+  },
+  filterLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginBottom: 6,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  filterButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderRadius: 12,
+    padding: 4,
+    borderWidth: 1,
+    borderColor: colors.muted + '40',
+  },
+  filterButton: {
+    padding: 8,
+    borderRadius: 8,
+  },
+  filterValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    flex: 1,
+    textAlign: 'center',
   },
 });
 

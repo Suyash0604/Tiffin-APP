@@ -987,5 +987,98 @@ export const api = {
       throw error;
     }
   },
+
+  // User update APIs
+  async updatePassword(
+    userId: string,
+    oldPassword: string,
+    newPassword: string
+  ): Promise<{ message: string }> {
+    const url = `${API_BASE_URL}/auth/update-pass`;
+    
+    console.log('🔵 [updatePassword] Starting request...');
+    console.log('🔵 [updatePassword] URL:', url);
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ userId, oldPassword, newPassword }),
+      });
+
+      console.log('🟢 [updatePassword] Response status:', response.status);
+      console.log('🟢 [updatePassword] Response OK:', response.ok);
+
+      if (!response.ok) {
+        let errorData;
+        try {
+          errorData = await response.json();
+          console.error('🔴 [updatePassword] Error response:', errorData);
+        } catch (e) {
+          const text = await response.text();
+          console.error('🔴 [updatePassword] Error response (text):', text);
+          errorData = { message: text || 'Failed to update password' };
+        }
+        throw new Error(errorData.message || 'Failed to update password');
+      }
+
+      const data = await response.json();
+      console.log('✅ [updatePassword] Success:', data);
+      return data;
+    } catch (error: any) {
+      console.error('🔴 [updatePassword] Fetch error:', error);
+      throw error;
+    }
+  },
+
+  async updateName(
+    userId: string,
+    newName: string
+  ): Promise<{ message: string; user: User }> {
+    const url = `${API_BASE_URL}/auth/update-name`;
+    
+    console.log('🔵 [updateName] Starting request...');
+    console.log('🔵 [updateName] URL:', url);
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ userId, newName }),
+      });
+
+      console.log('🟢 [updateName] Response status:', response.status);
+      console.log('🟢 [updateName] Response OK:', response.ok);
+
+      if (!response.ok) {
+        let errorData;
+        try {
+          errorData = await response.json();
+          console.error('🔴 [updateName] Error response:', errorData);
+        } catch (e) {
+          const text = await response.text();
+          console.error('🔴 [updateName] Error response (text):', text);
+          errorData = { message: text || 'Failed to update name' };
+        }
+        throw new Error(errorData.message || 'Failed to update name');
+      }
+
+      const data = await response.json();
+      console.log('✅ [updateName] Success:', data);
+      if (data.user) {
+        await storeUser(data.user);
+      }
+      return data;
+    } catch (error: any) {
+      console.error('🔴 [updateName] Fetch error:', error);
+      throw error;
+    }
+  },
 };
 
