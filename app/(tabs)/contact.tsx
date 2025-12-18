@@ -9,13 +9,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 export default function ContactScreen() {
   const { colors } = useTheme();
   const styles = getStyles(colors);
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSendMessage = async () => {
-    if (!name || !email || !message) {
+    if (!subject || !message) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
@@ -29,8 +28,6 @@ export default function ContactScreen() {
         return;
       }
 
-      // Use name and email as subject, message as message
-      const subject = `Contact from ${name} (${email})`;
       await api.contactThroughEmail(user.id, subject, message);
       
       Alert.alert(
@@ -40,8 +37,7 @@ export default function ContactScreen() {
           {
             text: 'OK',
             onPress: () => {
-              setName('');
-              setEmail('');
+              setSubject('');
               setMessage('');
             },
           },
@@ -175,26 +171,13 @@ export default function ContactScreen() {
           </View>
 
           <View style={styles.inputContainer}>
-            <Text style={[styles.inputLabel, { color: colors.text }]}>Name</Text>
+            <Text style={[styles.inputLabel, { color: colors.text }]}>Subject</Text>
             <TextInput
               style={[styles.input, { backgroundColor: colors.bg, color: colors.text, borderColor: colors.muted + '40' }]}
-              placeholder="Your name"
+              placeholder="What is this regarding?"
               placeholderTextColor={colors.muted}
-              value={name}
-              onChangeText={setName}
-            />
-          </View>
-
-          <View style={styles.inputContainer}>
-            <Text style={[styles.inputLabel, { color: colors.text }]}>Email</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: colors.bg, color: colors.text, borderColor: colors.muted + '40' }]}
-              placeholder="your.email@example.com"
-              placeholderTextColor={colors.muted}
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
+              value={subject}
+              onChangeText={setSubject}
             />
           </View>
 

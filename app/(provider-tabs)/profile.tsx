@@ -1,15 +1,18 @@
 import { useTheme } from '@/contexts/ThemeContext';
-import { clearSession, fetchAndStoreUser, User } from '@/utils/api';
+import { api, clearSession, fetchAndStoreUser, getUser, User } from '@/utils/api';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import React, { useState } from 'react';
 import {
+    ActivityIndicator,
     Alert,
     Image,
+    Modal,
     ScrollView,
     StyleSheet,
     Switch,
     Text,
+    TextInput,
     TouchableOpacity,
     View,
 } from 'react-native';
@@ -20,6 +23,9 @@ export default function ProviderProfileScreen() {
   const styles = getStyles(colors);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [updating, setUpdating] = useState(false);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -59,6 +65,43 @@ export default function ProviderProfileScreen() {
     ]);
   };
 
+  const handleEditName = () => {
+    setNewName(user?.name || '');
+    setEditModalVisible(true);
+  };
+
+  const handleUpdateName = async () => {
+    if (!newName.trim()) {
+      Alert.alert('Error', 'Name cannot be empty');
+      return;
+    }
+
+    if (newName.trim() === user?.name) {
+      setEditModalVisible(false);
+      return;
+    }
+
+    setUpdating(true);
+    try {
+      const currentUser = await getUser();
+      if (!currentUser || !currentUser.id) {
+        Alert.alert('Error', 'User not found. Please login again.');
+        router.replace('/(auth)/login');
+        return;
+      }
+
+      await api.updateName(currentUser.id, newName.trim());
+      await loadUser(); // Refresh user data
+      
+      Alert.alert('Success', 'Name updated successfully');
+      setEditModalVisible(false);
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to update name');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   if (loading) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['top']}>
@@ -91,7 +134,15 @@ export default function ProviderProfileScreen() {
           <View style={[styles.avatarContainer, { backgroundColor: colors.brand + '20' }]}>
             <Ionicons name="business" size={48} color={colors.brand} />
           </View>
-          <Text style={[styles.profileName, { color: colors.text }]}>{user?.name || 'Provider'}</Text>
+          <View style={styles.nameContainer}>
+            <Text style={[styles.profileName, { color: colors.text }]}>{user?.name || 'Provider'}</Text>
+            <TouchableOpacity 
+              onPress={handleEditName}
+              style={styles.editButton}
+            >
+              <Ionicons name="create-outline" size={20} color={colors.brand} />
+            </TouchableOpacity>
+          </View>
           <Text style={[styles.profileEmail, { color: colors.muted }]}>{user?.email}</Text>
           <View style={[styles.roleBadge, { backgroundColor: colors.brand + '20' }]}>
             <Text style={[styles.roleText, { color: colors.brand }]}>
@@ -99,6 +150,69 @@ export default function ProviderProfileScreen() {
             </Text>
           </View>
         </View>
+
+        {/* Edit Name Modal */}
+        <Modal
+          visible={editModalVisible}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={() => setEditModalVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
+              <View style={styles.modalHeader}>
+                <Text style={[styles.modalTitle, { color: colors.text }]}>Edit Name</Text>
+                <TouchableOpacity 
+                  onPress={() => setEditModalVisible(false)}
+                  disabled={updating}
+                >
+                  <Ionicons name="close" size={24} color={colors.text} />
+                </TouchableOpacity>
+              </View>
+              
+              <View style={styles.modalBody}>
+                <Text style={[styles.modalLabel, { color: colors.text }]}>Name</Text>
+                <TextInput
+                  style={[styles.modalInput, { backgroundColor: colors.bg, color: colors.text, borderColor: colors.muted + '40' }]}
+                  placeholder="Enter your name"
+                  placeholderTextColor={colors.muted}
+                  value={newName}
+                  onChangeText={setNewName}
+                  autoFocus
+                  editable={!updating}
+                />
+              </View>
+
+              <View style={styles.modalFooter}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.cancelButton, { borderColor: colors.muted }]}
+                  onPress={() => setEditModalVisible(false)}
+                  disabled={updating}
+                >
+                  <Text style={[styles.cancelButtonText, { color: colors.text }]}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.modalButton, 
+                    styles.saveButton, 
+                    { 
+                      backgroundColor: colors.brand,
+                      opacity: updating ? 0.6 : 1,
+                    }
+                  ]}
+                  onPress={handleUpdateName}
+                  disabled={updating || !newName.trim()}
+                >
+                  {updating ? (
+                    <ActivityIndicator color="#fff" size="small" />
+                  ) : (
+                    <Text style={styles.saveButtonText}>Save</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
 
         {/* Account Information */}
         <View style={[styles.infoCard, { backgroundColor: colors.surface }]}>
@@ -334,10 +448,18 @@ const getStyles = (colors: any) => StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
   },
+  nameContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 4,
+  },
   profileName: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 4,
+  },
+  editButton: {
+    padding: 4,
   },
   profileEmail: {
     fontSize: 14,
@@ -452,6 +574,74 @@ const getStyles = (colors: any) => StyleSheet.create({
     marginTop: 8,
   },
   logoutButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    width: '100%',
+    maxWidth: 400,
+    borderRadius: 20,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  modalBody: {
+    marginBottom: 24,
+  },
+  modalLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 14,
+    fontSize: 16,
+  },
+  modalFooter: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  modalButton: {
+    flex: 1,
+    padding: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancelButton: {
+    borderWidth: 1,
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  saveButton: {
+    // backgroundColor set inline
+  },
+  saveButtonText: {
+    color: '#fff',
     fontSize: 16,
     fontWeight: '600',
   },
