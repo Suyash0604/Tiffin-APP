@@ -994,7 +994,7 @@ export const api = {
     oldPassword: string,
     newPassword: string
   ): Promise<{ message: string }> {
-    const url = `${API_BASE_URL}/auth/update-pass`;
+    const url = `${API_BASE_URL}/profile/update-pass`;
     
     console.log('🔵 [updatePassword] Starting request...');
     console.log('🔵 [updatePassword] URL:', url);
@@ -1038,7 +1038,7 @@ export const api = {
     userId: string,
     newName: string
   ): Promise<{ message: string; user: User }> {
-    const url = `${API_BASE_URL}/auth/update-name`;
+    const url = `${API_BASE_URL}/profile/update-name`;
     
     console.log('🔵 [updateName] Starting request...');
     console.log('🔵 [updateName] URL:', url);
@@ -1077,6 +1077,51 @@ export const api = {
       return data;
     } catch (error: any) {
       console.error('🔴 [updateName] Fetch error:', error);
+      throw error;
+    }
+  },
+
+  async contactThroughEmail(
+    userId: string,
+    subject: string,
+    message: string
+  ): Promise<{ message: string }> {
+    const url = `${API_BASE_URL}/profile/contact-through-email`;
+    
+    console.log('🔵 [contactThroughEmail] Starting request...');
+    console.log('🔵 [contactThroughEmail] URL:', url);
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ userId, subject, message }),
+      });
+
+      console.log('🟢 [contactThroughEmail] Response status:', response.status);
+      console.log('🟢 [contactThroughEmail] Response OK:', response.ok);
+
+      if (!response.ok) {
+        let errorData;
+        try {
+          errorData = await response.json();
+          console.error('🔴 [contactThroughEmail] Error response:', errorData);
+        } catch (e) {
+          const text = await response.text();
+          console.error('🔴 [contactThroughEmail] Error response (text):', text);
+          errorData = { message: text || 'Failed to send contact email' };
+        }
+        throw new Error(errorData.message || 'Failed to send contact email');
+      }
+
+      const data = await response.json();
+      console.log('✅ [contactThroughEmail] Success:', data);
+      return data;
+    } catch (error: any) {
+      console.error('🔴 [contactThroughEmail] Fetch error:', error);
       throw error;
     }
   },

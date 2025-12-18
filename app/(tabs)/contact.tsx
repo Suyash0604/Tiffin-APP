@@ -1,8 +1,9 @@
 import { useTheme } from '@/contexts/ThemeContext';
+import { api, getUser } from '@/utils/api';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
-import { Alert, Linking, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function ContactScreen() {
@@ -11,17 +12,46 @@ export default function ContactScreen() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!name || !email || !message) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
-    // Frontend only - no API call
-    Alert.alert('Message Sent', 'Thank you for contacting us! We will get back to you soon.');
-    setName('');
-    setEmail('');
-    setMessage('');
+
+    setLoading(true);
+    try {
+      const user = await getUser();
+      if (!user || !user.id) {
+        Alert.alert('Error', 'User not found. Please login again.');
+        router.replace('/(auth)/login');
+        return;
+      }
+
+      // Use name and email as subject, message as message
+      const subject = `Contact from ${name} (${email})`;
+      await api.contactThroughEmail(user.id, subject, message);
+      
+      Alert.alert(
+        'Message Sent',
+        'Your message has been sent to the developer. We will get back to you soon.',
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              setName('');
+              setEmail('');
+              setMessage('');
+            },
+          },
+        ]
+      );
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to send message');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCall = (phone: string) => {
@@ -183,11 +213,24 @@ export default function ContactScreen() {
           </View>
 
           <TouchableOpacity 
-            style={[styles.sendButton, { backgroundColor: colors.brand }]}
+            style={[
+              styles.sendButton, 
+              { 
+                backgroundColor: colors.brand,
+                opacity: loading ? 0.6 : 1,
+              }
+            ]}
             onPress={handleSendMessage}
+            disabled={loading}
           >
-            <Ionicons name="send" size={20} color="#fff" />
-            <Text style={styles.sendButtonText}>Send Message</Text>
+            {loading ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <>
+                <Ionicons name="send" size={20} color="#fff" />
+                <Text style={styles.sendButtonText}>Send Message</Text>
+              </>
+            )}
           </TouchableOpacity>
         </View>
 
