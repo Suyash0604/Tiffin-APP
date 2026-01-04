@@ -38,7 +38,7 @@ export default function ContactScreen() {
             text: 'OK',
             onPress: () => {
               setSubject('');
-              setMessage('');
+    setMessage('');
             },
           },
         ]
@@ -210,8 +210,8 @@ export default function ContactScreen() {
               <ActivityIndicator color="#fff" size="small" />
             ) : (
               <>
-                <Ionicons name="send" size={20} color="#fff" />
-                <Text style={styles.sendButtonText}>Send Message</Text>
+            <Ionicons name="send" size={20} color="#fff" />
+            <Text style={styles.sendButtonText}>Send Message</Text>
               </>
             )}
           </TouchableOpacity>
@@ -252,7 +252,7 @@ const getStyles = (colors: any) => StyleSheet.create({
     paddingBottom: 100, // Extra padding to account for bottom tab bar
   },
   contactCard: {
-    borderRadius: 16,
+    borderRadius: 22,
     padding: 20,
     marginBottom: 16,
     borderWidth: 1,
@@ -307,7 +307,7 @@ const getStyles = (colors: any) => StyleSheet.create({
     fontSize: 15,
   },
   formCard: {
-    borderRadius: 16,
+    borderRadius: 22,
     padding: 20,
     marginBottom: 16,
     borderWidth: 1,
@@ -328,13 +328,13 @@ const getStyles = (colors: any) => StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderRadius: 12,
+    borderRadius: 22,
     padding: 14,
     fontSize: 15,
   },
   textArea: {
     borderWidth: 1,
-    borderRadius: 12,
+    borderRadius: 22,
     padding: 14,
     fontSize: 15,
     minHeight: 120,
@@ -344,7 +344,7 @@ const getStyles = (colors: any) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 16,
-    borderRadius: 12,
+    borderRadius: 22,
     gap: 8,
     marginTop: 8,
   },
@@ -361,7 +361,7 @@ const getStyles = (colors: any) => StyleSheet.create({
   socialButton: {
     width: 50,
     height: 50,
-    borderRadius: 25,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
   },

@@ -697,7 +697,7 @@ const getStyles = (colors: any) => StyleSheet.create({
   addButton: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: 22,
     backgroundColor: colors.brand,
     justifyContent: 'center',
     alignItems: 'center',
@@ -735,7 +735,7 @@ const getStyles = (colors: any) => StyleSheet.create({
   },
   menuCard: {
     backgroundColor: colors.surface,
-    borderRadius: 12,
+    borderRadius: 22,
     padding: 16,
     borderWidth: 1,
     borderColor: colors.muted + '40',
@@ -797,7 +797,7 @@ const getStyles = (colors: any) => StyleSheet.create({
     backgroundColor: colors.bg,
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 16,
+    borderRadius: 22,
   },
   sabziText: {
     fontSize: 14,
@@ -821,7 +821,7 @@ const getStyles = (colors: any) => StyleSheet.create({
     flex: 1,
     backgroundColor: colors.bg,
     padding: 12,
-    borderRadius: 8,
+    borderRadius: 22,
     alignItems: 'center',
   },
   priceLabel: {
@@ -888,7 +888,7 @@ const getStyles = (colors: any) => StyleSheet.create({
   input: {
     borderWidth: 1,
     borderColor: colors.muted,
-    borderRadius: 10,
+    borderRadius: 22,
     padding: 12,
     fontSize: 16,
     color: colors.text,
@@ -900,7 +900,7 @@ const getStyles = (colors: any) => StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: colors.muted,
-    borderRadius: 10,
+    borderRadius: 22,
     padding: 12,
     backgroundColor: colors.surface,
   },
@@ -961,7 +961,7 @@ const getStyles = (colors: any) => StyleSheet.create({
   cancelButton: {
     flex: 1,
     padding: 14,
-    borderRadius: 10,
+    borderRadius: 22,
     borderWidth: 1,
     borderColor: colors.muted,
     alignItems: 'center',
@@ -974,7 +974,7 @@ const getStyles = (colors: any) => StyleSheet.create({
   saveButton: {
     flex: 1,
     padding: 14,
-    borderRadius: 10,
+    borderRadius: 22,
     backgroundColor: colors.brand,
     alignItems: 'center',
   },

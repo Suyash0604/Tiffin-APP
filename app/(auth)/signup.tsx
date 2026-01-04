@@ -219,7 +219,7 @@ const getStyles = (colors: any) => StyleSheet.create({
   },
   formContainer: {
     backgroundColor: colors.surface,
-    borderRadius: 16,
+    borderRadius: 22,
     padding: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -250,7 +250,7 @@ const getStyles = (colors: any) => StyleSheet.create({
   input: {
     borderWidth: 1,
     borderColor: colors.muted,
-    borderRadius: 10,
+    borderRadius: 22,
     padding: 12,
     fontSize: 16,
     color: colors.text,
@@ -261,7 +261,7 @@ const getStyles = (colors: any) => StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: colors.muted,
-    borderRadius: 10,
+    borderRadius: 22,
     backgroundColor: colors.surface,
   },
   passwordInput: {
@@ -280,7 +280,7 @@ const getStyles = (colors: any) => StyleSheet.create({
   },
   button: {
     backgroundColor: colors.brand,
-    borderRadius: 10,
+    borderRadius: 22,
     padding: 14,
     alignItems: 'center',
     marginTop: 8,

@@ -7,6 +7,7 @@ import React, { useState } from 'react';
 import {
     Alert,
     Image,
+    Linking,
     Modal,
     Platform,
     ScrollView,
@@ -212,6 +213,18 @@ export default function ProviderOrdersScreen() {
     }
   };
 
+  const handleCall = (phone: string | number) => {
+    if (!phone) {
+      Alert.alert('Error', 'Phone number not available');
+      return;
+    }
+    // Convert to string first (phone might be a number)
+    const phoneString = String(phone);
+    // Remove any spaces or special characters except + for the tel: URL
+    const cleanPhone = phoneString.replace(/\s+/g, '');
+    Linking.openURL(`tel:${cleanPhone}`);
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
@@ -297,15 +310,20 @@ export default function ProviderOrdersScreen() {
                       {getCustomerMobile(order) && (
                         <View style={styles.customerInfoSection}>
                           <View style={styles.customerInfoCard}>
-                            <View style={styles.customerRow}>
-                              <View style={styles.customerIconContainer}>
-                                <Ionicons name="call-outline" size={18} color={colors.accent} />
+                            <TouchableOpacity 
+                              style={styles.customerRow}
+                              onPress={() => handleCall(getCustomerMobile(order))}
+                              activeOpacity={0.7}
+                            >
+                              <View style={[styles.customerIconContainer, styles.callIconContainer]}>
+                                <Ionicons name="call" size={18} color={colors.accent} />
                               </View>
                               <View style={styles.customerContent}>
                                 <Text style={styles.customerLabel}>Mobile</Text>
                                 <Text style={styles.customerMobile}>{getCustomerMobile(order)}</Text>
                               </View>
-                            </View>
+                              <Ionicons name="chevron-forward" size={16} color={colors.muted} />
+                            </TouchableOpacity>
                             {getCustomerAddress(order) && (
                               <View style={styles.customerRow}>
                                 <View style={styles.customerIconContainer}>
@@ -514,7 +532,7 @@ const getStyles = (colors: any) => StyleSheet.create({
   },
   filterButton: {
     padding: 8,
-    borderRadius: 8,
+    borderRadius: 22,
     backgroundColor: colors.brand + '15',
   },
   scrollView: {
@@ -549,7 +567,7 @@ const getStyles = (colors: any) => StyleSheet.create({
   },
   orderCard: {
     backgroundColor: colors.surface,
-    borderRadius: 20,
+    borderRadius: 22,
     padding: 16,
     borderWidth: 1,
     borderColor: colors.muted + '40',
@@ -608,13 +626,13 @@ const getStyles = (colors: any) => StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 20,
+    borderRadius: 22,
     gap: 6,
   },
   statusDot: {
     width: 8,
     height: 8,
-    borderRadius: 4,
+    borderRadius: 22,
   },
   statusText: {
     fontSize: 12,
@@ -626,7 +644,7 @@ const getStyles = (colors: any) => StyleSheet.create({
   },
   customerInfoCard: {
     backgroundColor: colors.bg,
-    borderRadius: 12,
+    borderRadius: 22,
     padding: 10,
     gap: 10,
     borderWidth: 1,
@@ -640,10 +658,15 @@ const getStyles = (colors: any) => StyleSheet.create({
   customerIconContainer: {
     width: 36,
     height: 36,
-    borderRadius: 18,
+    borderRadius: 22,
     backgroundColor: colors.surface,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  callIconContainer: {
+    backgroundColor: colors.accent + '15',
+    borderWidth: 1,
+    borderColor: colors.accent + '30',
   },
   customerContent: {
     flex: 1,
@@ -692,7 +715,7 @@ const getStyles = (colors: any) => StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: colors.bg,
-    borderRadius: 12,
+    borderRadius: 22,
     padding: 10,
     borderWidth: 1,
     borderColor: colors.muted + '30',
@@ -706,7 +729,7 @@ const getStyles = (colors: any) => StyleSheet.create({
   itemIconContainer: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: 22,
     backgroundColor: colors.brand + '15',
     justifyContent: 'center',
     alignItems: 'center',
@@ -761,7 +784,7 @@ const getStyles = (colors: any) => StyleSheet.create({
     gap: 6,
     paddingHorizontal: 16,
     paddingVertical: 10,
-    borderRadius: 10,
+    borderRadius: 22,
     backgroundColor: colors.brand,
     flex: 1,
     minWidth: 120,
@@ -778,7 +801,7 @@ const getStyles = (colors: any) => StyleSheet.create({
     gap: 6,
     paddingHorizontal: 16,
     paddingVertical: 10,
-    borderRadius: 10,
+    borderRadius: 22,
     backgroundColor: colors.danger + '15',
     borderWidth: 1,
     borderColor: colors.danger + '40',
@@ -833,7 +856,7 @@ const getStyles = (colors: any) => StyleSheet.create({
   },
   dateInput: {
     backgroundColor: colors.bg,
-    borderRadius: 12,
+    borderRadius: 22,
     padding: 16,
     fontSize: 16,
     color: colors.text,
@@ -854,7 +877,7 @@ const getStyles = (colors: any) => StyleSheet.create({
   modalButton: {
     flex: 1,
     paddingVertical: 16,
-    borderRadius: 12,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
   },

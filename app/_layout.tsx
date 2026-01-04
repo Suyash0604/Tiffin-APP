@@ -1,9 +1,9 @@
-import { Stack } from "expo-router";
-import { ThemeProvider } from "@/contexts/ThemeContext";
-import { useEffect, useRef, useState } from "react";
-import { Animated, View, Image, StyleSheet } from "react-native";
-import * as SplashScreen from "expo-splash-screen";
 import { lightColors } from "@/constants/theme";
+import { ThemeProvider } from "@/contexts/ThemeContext";
+import { Stack } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
+import { useEffect, useRef, useState } from "react";
+import { Animated, Image, StyleSheet, View } from "react-native";
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();

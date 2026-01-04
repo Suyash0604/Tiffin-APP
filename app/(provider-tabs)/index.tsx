@@ -299,7 +299,7 @@ const getStyles = (colors: any) => StyleSheet.create({
   },
   welcomeCard: {
     backgroundColor: colors.surface,
-    borderRadius: 16,
+    borderRadius: 22,
     padding: 16,
     marginBottom: 16,
     shadowColor: '#000',
@@ -326,7 +326,7 @@ const getStyles = (colors: any) => StyleSheet.create({
   },
   summaryCard: {
     backgroundColor: colors.surface,
-    borderRadius: 16,
+    borderRadius: 22,
     padding: 16,
     marginBottom: 20,
     shadowColor: '#000',
@@ -428,7 +428,7 @@ const getStyles = (colors: any) => StyleSheet.create({
   actionCard: {
     width: '48%',
     backgroundColor: colors.surface,
-    borderRadius: 12,
+    borderRadius: 22,
     padding: 16,
     alignItems: 'center',
     marginBottom: 12,

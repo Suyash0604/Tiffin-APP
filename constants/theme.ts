@@ -1,28 +1,36 @@
 import * as SecureStore from 'expo-secure-store';
 
-// Light theme colors
 export const lightColors = {
-  brand: '#FF6F00',
-  brand2: '#E9A100',
-  accent: '#2B8A4B',
-  bg: '#FFF8F0',
+  brand: '#F76707',   // deep saffron-orange (rich, cooked-food tone)
+  brand2: '#E9B949',  // muted turmeric-gold (not yellowish)
+  accent: '#1F9D6E',  // balanced jade green (trust + freshness)
+
+  bg: '#FAFAF9',      // neutral studio white (zero creaminess)
   surface: '#FFFFFF',
-  text: '#2C2C2C',
-  muted: '#DDC9B5',
-  danger: '#D32F2F',
+
+  text: '#1C1F24',    // near-black slate (crisp but soft)
+  muted: '#8A8178',   // warm-neutral gray (perfect hierarchy)
+
+  danger: '#C63636',  // mature red (professional, not panic)
 };
+
+
 
 // Dark theme colors - matching the provided design tokens
 export const darkColors = {
-  brand: '#FF8A2B', // Primary CTA / Full tiffin
-  brand2: '#F5C45B', // Secondary CTA / Half tiffin
-  accent: '#50B26C', // Rice-only or success
-  bg: '#0B0E0F', // Deep neutral background
-  surface: '#1A1F1E', // Primary surface (cards) - lightened for better visibility
-  text: '#E6F0EF', // Body text on dark
-  muted: '#8A9995', // Muted text
-  danger: '#EF5C5C', // Errors / cancels
+  brand: '#FF8F2D',   // premium saffron glow (eye-safe)
+  brand2: '#F1C453',  // soft gold highlight
+  accent: '#2FB67E',  // controlled emerald-green
+
+  bg: '#070809',      // near-absolute AMOLED black
+  surface: '#111416', // floating surface depth
+
+  text: '#ECEFF1',    // clean white without glare
+  muted: '#A1A7A5',   // neutral gray (no green tint)
+
+  danger: '#E85A5A',  // visible but calm red
 };
+
 
 // Default to light theme
 export const colors = lightColors;
@@ -34,7 +42,7 @@ const THEME_STORAGE_KEY = 'app_theme';
 const getAPIBaseURL = () => {
   // Temporarily force production URL for testing
   // return 'https://tiffin-backend-zo3a.onrender.com';
-  return 'http://192.168.1.8:3000';
+  return 'http://192.168.1.7:3000';
   // Original code...
 };
 

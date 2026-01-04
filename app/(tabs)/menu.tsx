@@ -548,7 +548,7 @@ const getStyles = (colors: any) => StyleSheet.create({
   },
   menuCard: {
     backgroundColor: colors.surface,
-    borderRadius: 16,
+    borderRadius: 22,
     padding: 16,
     marginBottom: 16,
     shadowColor: '#000',
@@ -587,7 +587,7 @@ const getStyles = (colors: any) => StyleSheet.create({
     backgroundColor: colors.bg,
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 12,
+    borderRadius: 22,
     borderWidth: 1,
     borderColor: colors.muted,
   },
@@ -605,7 +605,7 @@ const getStyles = (colors: any) => StyleSheet.create({
     backgroundColor: colors.brand,
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 12,
+    borderRadius: 22,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
@@ -623,7 +623,7 @@ const getStyles = (colors: any) => StyleSheet.create({
   },
   orderButton: {
     backgroundColor: colors.brand,
-    borderRadius: 8,
+    borderRadius: 22,
     paddingHorizontal: 12,
     paddingVertical: 6,
     alignSelf: 'flex-start',
@@ -669,7 +669,7 @@ const getStyles = (colors: any) => StyleSheet.create({
   menuInfoCard: {
     backgroundColor: colors.bg,
     padding: 12,
-    borderRadius: 10,
+    borderRadius: 22,
     marginBottom: 20,
   },
   menuInfoText: {
@@ -685,7 +685,7 @@ const getStyles = (colors: any) => StyleSheet.create({
   },
   orderItemCard: {
     backgroundColor: colors.bg,
-    borderRadius: 12,
+    borderRadius: 22,
     padding: 16,
     marginBottom: 12,
   },
@@ -720,7 +720,7 @@ const getStyles = (colors: any) => StyleSheet.create({
   mealTypeButton: {
     paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 20,
+    borderRadius: 22,
     borderWidth: 1,
     borderColor: colors.muted,
     backgroundColor: colors.surface,
@@ -745,7 +745,7 @@ const getStyles = (colors: any) => StyleSheet.create({
   sabjiButton: {
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 16,
+    borderRadius: 22,
     borderWidth: 1,
     borderColor: colors.muted,
     backgroundColor: colors.surface,
@@ -776,7 +776,7 @@ const getStyles = (colors: any) => StyleSheet.create({
   quantityButton: {
     width: 32,
     height: 32,
-    borderRadius: 16,
+    borderRadius: 22,
     backgroundColor: colors.bg,
     justifyContent: 'center',
     alignItems: 'center',
@@ -829,7 +829,7 @@ const getStyles = (colors: any) => StyleSheet.create({
   },
   placeOrderButton: {
     backgroundColor: colors.brand,
-    borderRadius: 12,
+    borderRadius: 22,
     padding: 16,
     alignItems: 'center',
   },

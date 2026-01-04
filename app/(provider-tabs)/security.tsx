@@ -49,20 +49,20 @@ export default function SecurityScreen() {
 
       await api.updatePassword(user.id, currentPassword, newPassword);
       
-      Alert.alert(
+    Alert.alert(
         'Success',
         'Password updated successfully',
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              setCurrentPassword('');
-              setNewPassword('');
-              setConfirmPassword('');
-            },
+      [
+        {
+          text: 'OK',
+          onPress: () => {
+            setCurrentPassword('');
+            setNewPassword('');
+            setConfirmPassword('');
           },
-        ]
-      );
+        },
+      ]
+    );
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Failed to update password');
     } finally {
@@ -273,8 +273,8 @@ export default function SecurityScreen() {
               <ActivityIndicator color="#fff" size="small" />
             ) : (
               <>
-                <Ionicons name="lock-closed" size={20} color="#fff" />
-                <Text style={styles.resetButtonText}>Reset Password</Text>
+            <Ionicons name="lock-closed" size={20} color="#fff" />
+            <Text style={styles.resetButtonText}>Reset Password</Text>
               </>
             )}
           </TouchableOpacity>
@@ -346,7 +346,7 @@ const getStyles = (colors: any) => StyleSheet.create({
     paddingBottom: 32,
   },
   infoCard: {
-    borderRadius: 16,
+    borderRadius: 22,
     padding: 20,
     marginBottom: 20,
     borderWidth: 1,
@@ -372,7 +372,7 @@ const getStyles = (colors: any) => StyleSheet.create({
     lineHeight: 20,
   },
   formCard: {
-    borderRadius: 16,
+    borderRadius: 22,
     padding: 20,
     marginBottom: 20,
     borderWidth: 1,
@@ -405,7 +405,7 @@ const getStyles = (colors: any) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderRadius: 12,
+    borderRadius: 22,
     backgroundColor: colors.bg,
   },
   passwordInput: {
@@ -443,7 +443,7 @@ const getStyles = (colors: any) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 16,
-    borderRadius: 12,
+    borderRadius: 22,
     gap: 8,
     marginTop: 8,
   },
@@ -453,7 +453,7 @@ const getStyles = (colors: any) => StyleSheet.create({
     fontWeight: '600',
   },
   tipsCard: {
-    borderRadius: 16,
+    borderRadius: 22,
     padding: 20,
     marginBottom: 20,
     borderWidth: 1,

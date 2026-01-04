@@ -438,7 +438,7 @@ const getStyles = (colors: any) => StyleSheet.create({
   },
   filterButton: {
     padding: 8,
-    borderRadius: 8,
+    borderRadius: 22,
     backgroundColor: colors.brand + '15',
   },
   scrollView: {
@@ -474,7 +474,7 @@ const getStyles = (colors: any) => StyleSheet.create({
   },
   orderCard: {
     backgroundColor: colors.surface,
-    borderRadius: 20,
+    borderRadius: 22,
     padding: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -527,7 +527,7 @@ const getStyles = (colors: any) => StyleSheet.create({
   },
   infoCard: {
     backgroundColor: colors.bg,
-    borderRadius: 12,
+    borderRadius: 22,
     padding: 10,
     gap: 10,
   },
@@ -539,7 +539,7 @@ const getStyles = (colors: any) => StyleSheet.create({
   iconContainer: {
     width: 36,
     height: 36,
-    borderRadius: 18,
+    borderRadius: 22,
     backgroundColor: colors.surface,
     justifyContent: 'center',
     alignItems: 'center',
@@ -582,7 +582,7 @@ const getStyles = (colors: any) => StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: colors.bg,
-    borderRadius: 12,
+    borderRadius: 22,
     padding: 10,
   },
   itemDetails: {
@@ -594,7 +594,7 @@ const getStyles = (colors: any) => StyleSheet.create({
   itemIconContainer: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: 22,
     backgroundColor: colors.brand + '15',
     justifyContent: 'center',
     alignItems: 'center',
@@ -679,7 +679,7 @@ const getStyles = (colors: any) => StyleSheet.create({
   },
   dateInput: {
     backgroundColor: colors.bg,
-    borderRadius: 12,
+    borderRadius: 22,
     padding: 16,
     fontSize: 16,
     color: colors.text,
@@ -700,7 +700,7 @@ const getStyles = (colors: any) => StyleSheet.create({
   modalButton: {
     flex: 1,
     paddingVertical: 16,
-    borderRadius: 12,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
   },

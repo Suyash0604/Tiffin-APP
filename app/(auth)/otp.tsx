@@ -203,7 +203,7 @@ const getStyles = (colors: any) => StyleSheet.create({
   },
   formContainer: {
     backgroundColor: colors.surface,
-    borderRadius: 16,
+    borderRadius: 22,
     padding: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -235,7 +235,7 @@ const getStyles = (colors: any) => StyleSheet.create({
     height: 56,
     borderWidth: 2,
     borderColor: colors.muted,
-    borderRadius: 10,
+    borderRadius: 22,
     textAlign: 'center',
     fontSize: 24,
     fontWeight: 'bold',
@@ -244,7 +244,7 @@ const getStyles = (colors: any) => StyleSheet.create({
   },
   button: {
     backgroundColor: colors.brand,
-    borderRadius: 10,
+    borderRadius: 22,
     padding: 14,
     alignItems: 'center',
     marginTop: 8,

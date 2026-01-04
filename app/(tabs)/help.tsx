@@ -171,7 +171,7 @@ const getStyles = (colors: any) => StyleSheet.create({
     paddingBottom: 100,
   },
   welcomeCard: {
-    borderRadius: 16,
+    borderRadius: 22,
     padding: 24,
     marginBottom: 24,
     alignItems: 'center',
@@ -203,7 +203,7 @@ const getStyles = (colors: any) => StyleSheet.create({
     marginBottom: 16,
   },
   faqCard: {
-    borderRadius: 12,
+    borderRadius: 22,
     marginBottom: 12,
     borderWidth: 1,
     borderColor: colors.muted + '40',
@@ -238,7 +238,7 @@ const getStyles = (colors: any) => StyleSheet.create({
     marginTop: 12,
   },
   supportCard: {
-    borderRadius: 16,
+    borderRadius: 22,
     padding: 24,
     marginBottom: 24,
     alignItems: 'center',
@@ -267,7 +267,7 @@ const getStyles = (colors: any) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 14,
-    borderRadius: 12,
+    borderRadius: 22,
     gap: 8,
     minWidth: 180,
   },
@@ -277,5 +277,15 @@ const getStyles = (colors: any) => StyleSheet.create({
     fontWeight: '600',
   },
 });
+
+
+
+
+
+
+
+
+
+
 
 

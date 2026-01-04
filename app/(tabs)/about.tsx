@@ -196,7 +196,7 @@ const getStyles = (colors: any) => StyleSheet.create({
     fontSize: 14,
   },
   section: {
-    borderRadius: 16,
+    borderRadius: 22,
     padding: 20,
     marginBottom: 20,
     borderWidth: 1,
@@ -264,5 +264,15 @@ const getStyles = (colors: any) => StyleSheet.create({
     marginBottom: 4,
   },
 });
+
+
+
+
+
+
+
+
+
+
 
 

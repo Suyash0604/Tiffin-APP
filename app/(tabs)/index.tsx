@@ -181,7 +181,7 @@ const getStyles = (colors: any) => StyleSheet.create({
   },
   welcomeCard: {
     backgroundColor: colors.surface,
-    borderRadius: 20,
+    borderRadius: 22,
     padding: 24,
     marginBottom: 24,
     shadowColor: '#000',
@@ -223,7 +223,7 @@ const getStyles = (colors: any) => StyleSheet.create({
   actionCard: {
     width: '48%',
     backgroundColor: colors.surface,
-    borderRadius: 16,
+    borderRadius: 22,
     padding: 20,
     alignItems: 'center',
     marginBottom: 12,

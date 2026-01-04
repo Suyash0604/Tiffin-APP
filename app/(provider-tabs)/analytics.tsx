@@ -794,7 +794,7 @@ const getStyles = (colors: any) => StyleSheet.create({
   },
   content: {
     padding: 16,
-    paddingBottom: 32,
+    paddingBottom: 100, // Extra padding to prevent content from hiding behind bottom tabs
   },
   loadingContainer: {
     flex: 1,
@@ -824,7 +824,7 @@ const getStyles = (colors: any) => StyleSheet.create({
   },
   summaryCard: {
     flex: 1,
-    borderRadius: 16,
+    borderRadius: 22,
     padding: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -835,7 +835,7 @@ const getStyles = (colors: any) => StyleSheet.create({
   summaryIconContainer: {
     width: 48,
     height: 48,
-    borderRadius: 24,
+    borderRadius: 22,
     backgroundColor: colors.bg,
     justifyContent: 'center',
     alignItems: 'center',
@@ -852,7 +852,7 @@ const getStyles = (colors: any) => StyleSheet.create({
     fontWeight: 'bold',
   },
   sectionCard: {
-    borderRadius: 16,
+    borderRadius: 22,
     padding: 16,
     marginBottom: 16,
     shadowColor: '#000',
@@ -910,12 +910,12 @@ const getStyles = (colors: any) => StyleSheet.create({
   },
   dataPointTouchable: {
     position: 'absolute',
-    borderRadius: 15,
+    borderRadius: 22,
     backgroundColor: 'transparent',
   },
   dataPointTooltip: {
     position: 'absolute',
-    borderRadius: 12,
+    borderRadius: 22,
     padding: 12,
     minWidth: 120,
     shadowColor: '#000',
@@ -982,13 +982,13 @@ const getStyles = (colors: any) => StyleSheet.create({
   barContainer: {
     height: 8,
     backgroundColor: colors.bg,
-    borderRadius: 4,
+    borderRadius: 22,
     overflow: 'hidden',
     marginBottom: 4,
   },
   bar: {
     height: '100%',
-    borderRadius: 4,
+    borderRadius: 22,
   },
   monthOrders: {
     fontSize: 12,
@@ -1023,14 +1023,14 @@ const getStyles = (colors: any) => StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     backgroundColor: colors.bg,
-    borderRadius: 12,
+    borderRadius: 22,
     borderWidth: 1,
     borderColor: colors.muted + '30',
   },
   rankBadge: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -1106,14 +1106,14 @@ const getStyles = (colors: any) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderRadius: 12,
+    borderRadius: 22,
     padding: 4,
     borderWidth: 1,
     borderColor: colors.muted + '40',
   },
   filterButton: {
     padding: 8,
-    borderRadius: 8,
+    borderRadius: 22,
   },
   filterValue: {
     fontSize: 14,

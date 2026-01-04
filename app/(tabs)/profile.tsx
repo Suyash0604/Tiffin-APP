@@ -115,25 +115,56 @@ export default function ProfileScreen() {
         </TouchableOpacity>
       </View>
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
-        {/* Profile Header */}
-        <View style={[styles.profileHeader, { backgroundColor: colors.surface }]}>
-          <View style={[styles.avatarContainer, { backgroundColor: colors.brand + '20' }]}>
-            <Ionicons name="person" size={48} color={colors.brand} />
+        {/* Merged Profile & Account Information */}
+        <View style={[styles.profileCard, { backgroundColor: colors.surface }]}>
+          {/* Left Side - Avatar, Name, Role */}
+          <View style={styles.profileLeft}>
+            <View style={[styles.avatarContainer, { backgroundColor: colors.brand + '20' }]}>
+              <Ionicons name="person" size={36} color={colors.brand} />
+            </View>
+            <View style={styles.nameContainer}>
+              <Text style={[styles.profileName, { color: colors.text }]}>{user?.name || 'User'}</Text>
+              <TouchableOpacity 
+                onPress={handleEditName}
+                style={styles.editButton}
+              >
+                <Ionicons name="create-outline" size={16} color={colors.brand} />
+              </TouchableOpacity>
+            </View>
+            <View style={[styles.roleBadge, { backgroundColor: colors.brand + '20' }]}>
+              <Text style={[styles.roleText, { color: colors.brand }]}>
+                {user?.role?.toUpperCase() || 'USER'}
+              </Text>
+            </View>
           </View>
-          <View style={styles.nameContainer}>
-            <Text style={[styles.profileName, { color: colors.text }]}>{user?.name || 'User'}</Text>
-            <TouchableOpacity 
-              onPress={handleEditName}
-              style={styles.editButton}
-            >
-              <Ionicons name="create-outline" size={20} color={colors.brand} />
-            </TouchableOpacity>
-          </View>
-          <Text style={[styles.profileEmail, { color: colors.muted }]}>{user?.email}</Text>
-          <View style={[styles.roleBadge, { backgroundColor: colors.brand + '20' }]}>
-            <Text style={[styles.roleText, { color: colors.brand }]}>
-              {user?.role?.toUpperCase() || 'USER'}
-            </Text>
+
+          {/* Right Side - Account Details */}
+          <View style={styles.profileRight}>
+            <View style={styles.infoRow}>
+              <Ionicons name="mail-outline" size={18} color={colors.muted} style={styles.infoIcon} />
+              <View style={styles.infoContent}>
+                <Text style={[styles.infoLabel, { color: colors.muted }]}>Email</Text>
+                <Text style={[styles.infoValue, { color: colors.text }]}>{user?.email}</Text>
+              </View>
+            </View>
+            {user?.mobile && (
+              <View style={styles.infoRow}>
+                <Ionicons name="call-outline" size={18} color={colors.muted} style={styles.infoIcon} />
+                <View style={styles.infoContent}>
+                  <Text style={[styles.infoLabel, { color: colors.muted }]}>Mobile</Text>
+                  <Text style={[styles.infoValue, { color: colors.text }]}>{user.mobile}</Text>
+                </View>
+              </View>
+            )}
+            {user?.address && (
+              <View style={styles.infoRow}>
+                <Ionicons name="location-outline" size={18} color={colors.muted} style={styles.infoIcon} />
+                <View style={styles.infoContent}>
+                  <Text style={[styles.infoLabel, { color: colors.muted }]}>Address</Text>
+                  <Text style={[styles.infoValue, { color: colors.text }]}>{user.address}</Text>
+                </View>
+              </View>
+            )}
           </View>
         </View>
 
@@ -199,39 +230,6 @@ export default function ProfileScreen() {
             </View>
           </View>
         </Modal>
-
-        {/* Account Information */}
-        <View style={[styles.infoCard, { backgroundColor: colors.surface }]}>
-          <View style={styles.cardHeader}>
-            <Ionicons name="person-circle-outline" size={20} color={colors.brand} />
-            <Text style={[styles.infoTitle, { color: colors.text }]}>Account Information</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Ionicons name="mail-outline" size={18} color={colors.muted} style={styles.infoIcon} />
-            <View style={styles.infoContent}>
-              <Text style={[styles.infoLabel, { color: colors.muted }]}>Email</Text>
-              <Text style={[styles.infoValue, { color: colors.text }]}>{user?.email}</Text>
-            </View>
-          </View>
-          {user?.mobile && (
-            <View style={styles.infoRow}>
-              <Ionicons name="call-outline" size={18} color={colors.muted} style={styles.infoIcon} />
-              <View style={styles.infoContent}>
-                <Text style={[styles.infoLabel, { color: colors.muted }]}>Mobile</Text>
-                <Text style={[styles.infoValue, { color: colors.text }]}>{user.mobile}</Text>
-              </View>
-            </View>
-          )}
-          {user?.address && (
-            <View style={styles.infoRow}>
-              <Ionicons name="location-outline" size={18} color={colors.muted} style={styles.infoIcon} />
-              <View style={styles.infoContent}>
-                <Text style={[styles.infoLabel, { color: colors.muted }]}>Address</Text>
-                <Text style={[styles.infoValue, { color: colors.text }]}>{user.address}</Text>
-              </View>
-            </View>
-          )}
-        </View>
 
         {/* Settings */}
         <View style={[styles.settingsCard, { backgroundColor: colors.surface }]}>
@@ -394,6 +392,7 @@ const getStyles = (colors: any) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    flex: 1,
   },
   headerLogo: {
     width: 32,
@@ -413,11 +412,12 @@ const getStyles = (colors: any) => StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
-  profileHeader: {
-    borderRadius: 20,
-    padding: 24,
+  profileCard: {
+    borderRadius: 22,
+    padding: 20,
     marginBottom: 20,
-    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 16,
     borderWidth: 1,
     borderColor: colors.muted + '40',
     shadowColor: '#000',
@@ -426,66 +426,48 @@ const getStyles = (colors: any) => StyleSheet.create({
     shadowRadius: 12,
     elevation: 4,
   },
+  profileLeft: {
+    alignItems: 'center',
+    minWidth: 90,
+  },
+  profileRight: {
+    flex: 1,
+    justifyContent: 'center',
+  },
   avatarContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 70,
+    height: 70,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 8,
   },
   nameContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 4,
+    gap: 6,
+    marginBottom: 6,
   },
   profileName: {
-    fontSize: 24,
+    fontSize: 16,
     fontWeight: 'bold',
   },
   editButton: {
-    padding: 4,
-  },
-  profileEmail: {
-    fontSize: 14,
-    marginBottom: 12,
+    padding: 2,
   },
   roleBadge: {
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 22,
   },
   roleText: {
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: '700',
     letterSpacing: 0.5,
   },
-  infoCard: {
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: colors.muted + '40',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 16,
-  },
-  infoTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
   infoRow: {
     flexDirection: 'row',
-    marginBottom: 16,
+    marginBottom: 12,
     alignItems: 'flex-start',
   },
   infoIcon: {
@@ -507,7 +489,7 @@ const getStyles = (colors: any) => StyleSheet.create({
     fontWeight: '500',
   },
   settingsCard: {
-    borderRadius: 16,
+    borderRadius: 22,
     padding: 20,
     marginBottom: 20,
     borderWidth: 1,
@@ -554,7 +536,7 @@ const getStyles = (colors: any) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 16,
-    borderRadius: 12,
+    borderRadius: 22,
     borderWidth: 1,
     gap: 8,
     marginTop: 8,
@@ -573,7 +555,7 @@ const getStyles = (colors: any) => StyleSheet.create({
   modalContent: {
     width: '100%',
     maxWidth: 400,
-    borderRadius: 20,
+    borderRadius: 22,
     padding: 24,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -601,7 +583,7 @@ const getStyles = (colors: any) => StyleSheet.create({
   },
   modalInput: {
     borderWidth: 1,
-    borderRadius: 12,
+    borderRadius: 22,
     padding: 14,
     fontSize: 16,
   },
@@ -612,7 +594,7 @@ const getStyles = (colors: any) => StyleSheet.create({
   modalButton: {
     flex: 1,
     padding: 14,
-    borderRadius: 12,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
   },
