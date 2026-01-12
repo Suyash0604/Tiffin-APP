@@ -70,6 +70,15 @@ export interface Order {
   orderDate?: string;
   createdAt?: string;
   updatedAt?: string;
+  canCancel?: boolean;
+  timeRemaining?: number;
+}
+
+export interface Provider {
+  _id: string;
+  name: string;
+  email: string;
+  role: string;
 }
 
 export interface PlaceOrderData {
@@ -140,13 +149,13 @@ export const fetchAndStoreUser = async (): Promise<User | null> => {
     return null;
   } catch (error: any) {
     // Silently handle "Not authenticated" errors - this is expected when user is not logged in
-    const isNotAuthenticated = error?.message?.includes('Not authenticated') || 
-                               error?.message?.includes('Failed to fetch user');
-    
+    const isNotAuthenticated = error?.message?.includes('Not authenticated') ||
+      error?.message?.includes('Failed to fetch user');
+
     if (!isNotAuthenticated) {
       console.error('🔴 [fetchAndStoreUser] Error fetching user:', error);
     }
-    
+
     // Fallback to stored user if API fails
     const storedUser = await getUser();
     if (storedUser) {
@@ -161,7 +170,7 @@ export const api = {
   async generateOTP(email: string): Promise<{ message: string }> {
     const url = `${API_BASE_URL}/auth/generate-otp`;
     const requestBody = { email };
-    
+
     console.log('🔵 [generateOTP] Starting request...');
     console.log('🔵 [generateOTP] API_BASE_URL:', API_BASE_URL);
     console.log('🔵 [generateOTP] Full URL:', url);
@@ -205,13 +214,13 @@ export const api = {
       console.error('🔴 [generateOTP] Error name:', error.name);
       console.error('🔴 [generateOTP] Error message:', error.message);
       console.error('🔴 [generateOTP] Error stack:', error.stack);
-      
+
       // Check for CORS-specific errors
       if (error.message?.includes('CORS') || error.message?.includes('Network request failed') || error.name === 'TypeError') {
         console.error('🔴 [generateOTP] CORS or Network Error detected!');
         console.error('🔴 [generateOTP] Make sure your backend has CORS enabled for:', Platform.OS === 'web' ? window.location.origin : 'mobile app');
       }
-      
+
       throw error;
     }
   },
@@ -229,7 +238,7 @@ export const api = {
   ): Promise<ApiResponse<User>> {
     const url = `${API_BASE_URL}/auth/verify-otp`;
     const requestBody = { email, otp, ...userData };
-    
+
     console.log('🔵 [verifyOTP] Starting request...');
     console.log('🔵 [verifyOTP] URL:', url);
     console.log('🔵 [verifyOTP] Request body (without sensitive data):', { email, otp, hasUserData: !!userData });
@@ -277,7 +286,7 @@ export const api = {
 
   async login(email: string, password: string): Promise<ApiResponse<User>> {
     const url = `${API_BASE_URL}/auth/login`;
-    
+
     console.log('🔵 [login] Starting request...');
     console.log('🔵 [login] URL:', url);
     console.log('🔵 [login] Email:', email);
@@ -325,7 +334,7 @@ export const api = {
 
   async getUser(): Promise<User> {
     const url = `${API_BASE_URL}/auth/user`;
-    
+
     console.log('🔵 [getUser] Starting request...');
     console.log('🔵 [getUser] URL:', url);
 
@@ -369,7 +378,7 @@ export const api = {
     } catch (error: any) {
       // Silently handle "Not authenticated" errors - this is expected when user is not logged in
       const isNotAuthenticated = error?.message?.includes('Not authenticated');
-      
+
       if (!isNotAuthenticated) {
         console.error('🔴 [getUser] Fetch error:', error);
         if (error.message?.includes('CORS') || error.message?.includes('Network request failed') || error.name === 'TypeError') {
@@ -387,7 +396,7 @@ export const api = {
   // Menu API (Provider routes)
   async createMenu(menuData: CreateMenuData): Promise<{ message: string; menu: Menu }> {
     const url = `${API_BASE_URL}/provider/create-menu`;
-    
+
     console.log('🔵 [createMenu] Starting request...');
     console.log('🔵 [createMenu] URL:', url);
     console.log('🔵 [createMenu] Menu data:', menuData);
@@ -429,7 +438,7 @@ export const api = {
 
   async getMenus(): Promise<{ count: number; menus: Menu[] }> {
     const url = `${API_BASE_URL}/provider`;
-    
+
     console.log('🔵 [getMenus] Starting request...');
     console.log('🔵 [getMenus] URL:', url);
 
@@ -478,7 +487,7 @@ export const api = {
     menuData: Partial<CreateMenuData>
   ): Promise<{ message: string; menu: Menu }> {
     const url = `${API_BASE_URL}/provider/${menuId}`;
-    
+
     console.log('🔵 [updateMenu] Starting request...');
     console.log('🔵 [updateMenu] URL:', url);
     console.log('🔵 [updateMenu] Menu data:', menuData);
@@ -520,7 +529,7 @@ export const api = {
 
   async deleteMenu(menuId: string, providerId: string): Promise<{ message: string }> {
     const url = `${API_BASE_URL}/provider/${menuId}`;
-    
+
     console.log('🔵 [deleteMenu] Starting request...');
     console.log('🔵 [deleteMenu] URL:', url);
 
@@ -559,10 +568,10 @@ export const api = {
     }
   },
 
-  // Order API (Student routes)
+  // Order API (User routes)
   async placeOrder(orderData: PlaceOrderData): Promise<{ message: string; order: Order }> {
-    const url = `${API_BASE_URL}/order`;
-    
+    const url = `${API_BASE_URL}/orders/`;
+
     console.log('🔵 [placeOrder] Starting request...');
     console.log('🔵 [placeOrder] URL:', url);
     console.log('🔵 [placeOrder] Order data:', orderData);
@@ -602,6 +611,138 @@ export const api = {
     }
   },
 
+  // User Provider/Favorites API
+  async getProviders(): Promise<{ success: boolean; count: number; providers: Provider[] }> {
+    const url = `${API_BASE_URL}/user/providers`;
+
+    console.log('🔵 [getProviders] Starting request...');
+    console.log('🔵 [getProviders] URL:', url);
+
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      });
+
+      console.log('🟢 [getProviders] Response status:', response.status);
+
+      if (!response.ok) {
+        let errorData;
+        try {
+          errorData = await response.json();
+          console.error('🔴 [getProviders] Error response:', errorData);
+        } catch (e) {
+          const text = await response.text();
+          console.error('🔴 [getProviders] Error response (text):', text);
+          errorData = { message: text || 'Failed to fetch providers' };
+        }
+        throw new Error(errorData.message || 'Failed to fetch providers');
+      }
+
+      const data = await response.json();
+      console.log('✅ [getProviders] Success:', { count: data.count });
+      return data;
+    } catch (error: any) {
+      console.error('🔴 [getProviders] Fetch error:', error);
+      throw error;
+    }
+  },
+
+  async getFavorites(userId: string): Promise<{ favoriteProviders: Provider[] }> {
+    const url = `${API_BASE_URL}/user/${userId}/favorites`;
+
+    console.log('🔵 [getFavorites] Starting request...');
+    console.log('🔵 [getFavorites] URL:', url);
+
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      });
+
+      // Handle 404 specially (no favorites found)
+      if (response.status === 404) {
+        console.log('🟡 [getFavorites] No favorites found (404)');
+        return { favoriteProviders: [] };
+      }
+
+      if (!response.ok) {
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch (e) {
+          errorData = { message: 'Failed to fetch favorites' };
+        }
+        throw new Error(errorData.message || 'Failed to fetch favorites');
+      }
+
+      const data = await response.json();
+      console.log('✅ [getFavorites] Success:', { count: data.favoriteProviders?.length });
+      return data;
+    } catch (error: any) {
+      console.error('🔴 [getFavorites] Fetch error:', error);
+      throw error;
+    }
+  },
+
+  async addFavorite(userId: string, providerId: string): Promise<{ success: boolean; message: string }> {
+    const url = `${API_BASE_URL}/user/${userId}/favorites/${providerId}`;
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to add favorite');
+      }
+
+      const data = await response.json();
+      console.log('✅ [addFavorite] Success');
+      return data;
+    } catch (error: any) {
+      console.error('🔴 [addFavorite] Fetch error:', error);
+      throw error;
+    }
+  },
+
+  async removeFavorite(userId: string, providerId: string): Promise<{ success: boolean; message: string }> {
+    const url = `${API_BASE_URL}/user/${userId}/favorites/${providerId}`;
+
+    try {
+      const response = await fetch(url, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to remove favorite');
+      }
+
+      const data = await response.json();
+      console.log('✅ [removeFavorite] Success');
+      return data;
+    } catch (error: any) {
+      console.error('🔴 [removeFavorite] Fetch error:', error);
+      throw error;
+    }
+  },
+
   async getOrders(
     userId: string,
     startDate?: string,
@@ -617,19 +758,19 @@ export const api = {
       return `${year}-${month}-${day}`;
     };
 
-    let url = `${API_BASE_URL}/order?userId=${userId}`;
-    
+    let url = `${API_BASE_URL}/orders/?userId=${userId}`;
+
     // Add date filters if provided
     const formattedStartDate = startDate ? formatDate(startDate) : undefined;
     const formattedEndDate = endDate ? formatDate(endDate) : undefined;
-    
+
     if (formattedStartDate) {
       url += `&startDate=${formattedStartDate}`;
     }
     if (formattedEndDate) {
       url += `&endDate=${formattedEndDate}`;
     }
-    
+
     console.log('🔵 [getOrders] Starting request...');
     console.log('🔵 [getOrders] URL:', url);
     const queryParams: any = { userId };
@@ -677,8 +818,8 @@ export const api = {
     startDate?: string,
     endDate?: string
   ): Promise<{ count: number; orders: Order[] }> {
-    const url = `${API_BASE_URL}/provider/provider?providerId=${providerId}`;
-    
+    const url = `${API_BASE_URL}/provider/provider`;
+
     // Format dates as YYYY-MM-DD if provided
     const formatDate = (date: string | Date | undefined): string | undefined => {
       if (!date) return undefined;
@@ -690,10 +831,11 @@ export const api = {
     };
 
     const body = {
+      providerId,
       startDate: formatDate(startDate) || formatDate(new Date()),
       endDate: formatDate(endDate) || formatDate(new Date()),
     };
-    
+
     console.log('🔵 [getProviderOrders] Starting request...');
     console.log('🔵 [getProviderOrders] URL:', url);
     console.log('🔵 [getProviderOrders] Body:', body);
@@ -756,8 +898,8 @@ export const api = {
     };
 
     const dateParam = formatDate(date) || formatDate(new Date());
-    const url = `${API_BASE_URL}/order/summary/provider?providerId=${providerId}&date=${dateParam}`;
-    
+    const url = `${API_BASE_URL}/orders/summary/provider?providerId=${providerId}&date=${dateParam}`;
+
     console.log('🔵 [getProviderOrdersSummary] Starting request...');
     console.log('🔵 [getProviderOrdersSummary] URL:', url);
     console.log('🔵 [getProviderOrdersSummary] Query params:', { providerId, date: dateParam });
@@ -789,7 +931,7 @@ export const api = {
 
       const data = await response.json();
       console.log('✅ [getProviderOrdersSummary] Success:', data);
-      
+
       if (data.success && data.data) {
         return data.data;
       } else {
@@ -800,6 +942,195 @@ export const api = {
       throw error;
     }
   },
+
+  async approveOrder(orderId: string, providerId: string): Promise<{ message: string; order: Order }> {
+    const url = `${API_BASE_URL}/orders/${orderId}/approve`;
+
+    console.log('🔵 [approveOrder] Starting request...');
+    console.log('🔵 [approveOrder] URL:', url);
+    console.log('🔵 [approveOrder] Order ID:', orderId);
+
+    try {
+      const response = await fetch(url, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ providerId }),
+      });
+
+      console.log('🟢 [approveOrder] Response status:', response.status);
+      console.log('🟢 [approveOrder] Response OK:', response.ok);
+
+      if (!response.ok) {
+        let errorData;
+        try {
+          errorData = await response.json();
+          console.error('🔴 [approveOrder] Error response:', errorData);
+        } catch (e) {
+          const text = await response.text();
+          console.error('🔴 [approveOrder] Error response (text):', text);
+          errorData = { message: text || 'Failed to approve order' };
+        }
+        throw new Error(errorData.message || 'Failed to approve order');
+      }
+
+      const data = await response.json();
+      console.log('✅ [approveOrder] Success:', data);
+      return data;
+    } catch (error: any) {
+      console.error('🔴 [approveOrder] Fetch error:', error);
+      throw error;
+    }
+  },
+
+  async rejectOrder(orderId: string, providerId: string): Promise<{ message: string; order: Order }> {
+    const url = `${API_BASE_URL}/orders/${orderId}/reject`;
+
+    console.log('🔵 [rejectOrder] Starting request...');
+    console.log('🔵 [rejectOrder] URL:', url);
+    console.log('🔵 [rejectOrder] Order ID:', orderId);
+
+    try {
+      const response = await fetch(url, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ providerId }),
+      });
+
+      console.log('🟢 [rejectOrder] Response status:', response.status);
+      console.log('🟢 [rejectOrder] Response OK:', response.ok);
+
+      if (!response.ok) {
+        let errorData;
+        try {
+          errorData = await response.json();
+          console.error('🔴 [rejectOrder] Error response:', errorData);
+        } catch (e) {
+          const text = await response.text();
+          console.error('🔴 [rejectOrder] Error response (text):', text);
+          errorData = { message: text || 'Failed to reject order' };
+        }
+        throw new Error(errorData.message || 'Failed to reject order');
+      }
+
+      const data = await response.json();
+      console.log('✅ [rejectOrder] Success:', data);
+      return data;
+    } catch (error: any) {
+      console.error('🔴 [rejectOrder] Fetch error:', error);
+      throw error;
+    }
+  },
+
+  async cancelOrder(orderId: string, userId: string): Promise<{ message: string; order: Order }> {
+    const url = `${API_BASE_URL}/orders/${orderId}/cancel`;
+
+    console.log('🔵 [cancelOrder] Starting request...');
+    console.log('🔵 [cancelOrder] URL:', url);
+    console.log('🔵 [cancelOrder] Order ID:', orderId);
+
+    try {
+      const response = await fetch(url, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ userId }),
+      });
+
+      console.log('🟢 [cancelOrder] Response status:', response.status);
+      console.log('🟢 [cancelOrder] Response OK:', response.ok);
+
+      if (!response.ok) {
+        let errorData;
+        try {
+          errorData = await response.json();
+          console.error('🔴 [cancelOrder] Error response:', errorData);
+        } catch (e) {
+          const text = await response.text();
+          console.error('🔴 [cancelOrder] Error response (text):', text);
+          errorData = { message: text || 'Failed to cancel order' };
+        }
+        throw new Error(errorData.message || 'Failed to cancel order');
+      }
+
+      const data = await response.json();
+      console.log('✅ [cancelOrder] Success:', data);
+      return data;
+    } catch (error: any) {
+      console.error('🔴 [cancelOrder] Fetch error:', error);
+      throw error;
+    }
+  },
+
+  // async getOrdersSummary(date?: string): Promise<{
+  //   success: boolean;
+  //   data: {
+  //     date: string;
+  //     totalOrders: number;
+  //     fullTiffin: number;
+  //     halfTiffin: number;
+  //     riceOnly: number;
+  //     totalRevenue: number;
+  //     orders: Order[];
+  //   };
+  // }> {
+  //   // Format date as YYYY-MM-DD if provided
+  //   const formatDate = (date: string | Date | undefined): string | undefined => {
+  //     if (!date) return undefined;
+  //     const d = typeof date === 'string' ? new Date(date) : date;
+  //     const year = d.getFullYear();
+  //     const month = String(d.getMonth() + 1).padStart(2, '0');
+  //     const day = String(d.getDate()).padStart(2, '0');
+  //     return `${year}-${month}-${day}`;
+  //   };
+
+  //   const dateParam = formatDate(date) || formatDate(new Date());
+  //   const url = `${API_BASE_URL}/orders/summary/all?date=${dateParam}`;
+
+  //   console.log('🔵 [getOrdersSummary] Starting request...');
+  //   console.log('🔵 [getOrdersSummary] URL:', url);
+  //   console.log('🔵 [getOrdersSummary] Query params:', { date: dateParam });
+
+  //   try {
+  //     const response = await fetch(url, {
+  //       method: 'GET',
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //       },
+  //       credentials: 'include',
+  //     });
+
+  //     console.log('🟢 [getOrdersSummary] Response status:', response.status);
+  //     console.log('🟢 [getOrdersSummary] Response OK:', response.ok);
+
+  //     if (!response.ok) {
+  //       let errorData;
+  //       try {
+  //         errorData = await response.json();
+  //         console.error('🔴 [getOrdersSummary] Error response:', errorData);
+  //       } catch (e) {
+  //         const text = await response.text();
+  //         console.error('🔴 [getOrdersSummary] Error response (text):', text);
+  //         errorData = { message: text || 'Failed to fetch orders summary' };
+  //       }
+  //       throw new Error(errorData.message || 'Failed to fetch orders summary');
+  //     }
+
+  //     const data = await response.json();
+  //     console.log('✅ [getOrdersSummary] Success:', data);
+  //     return data;
+  //   } catch (error: any) {
+  //     console.error('🔴 [getOrdersSummary] Fetch error:', error);
+  //     throw error;
+  //   }
+  // },
 
   // Analytics APIs
   async getMonthlyRevenue(providerId: string, year?: number): Promise<{
@@ -812,7 +1143,7 @@ export const api = {
     }>;
   }> {
     const url = `${API_BASE_URL}/analytic/monthly-revenue?providerId=${providerId}${year ? `&year=${year}` : ''}`;
-    
+
     try {
       const response = await fetch(url, {
         method: 'GET',
@@ -840,7 +1171,7 @@ export const api = {
     };
   }> {
     const url = `${API_BASE_URL}/analytic/overall-summary?providerId=${providerId}`;
-    
+
     try {
       const response = await fetch(url, {
         method: 'GET',
@@ -874,7 +1205,7 @@ export const api = {
     };
   }> {
     const url = `${API_BASE_URL}/analytic/best-sellers?providerId=${providerId}`;
-    
+
     try {
       const response = await fetch(url, {
         method: 'GET',
@@ -904,9 +1235,9 @@ export const api = {
     const params = new URLSearchParams({ providerId });
     if (month) params.append('month', month.toString());
     if (year) params.append('year', year.toString());
-    
+
     const url = `${API_BASE_URL}/analytic/daily-revenue-trend?${params.toString()}`;
-    
+
     try {
       const response = await fetch(url, {
         method: 'GET',
@@ -937,9 +1268,9 @@ export const api = {
     const params = new URLSearchParams({ providerId });
     if (startDate) params.append('startDate', startDate);
     if (endDate) params.append('endDate', endDate);
-    
+
     const url = `${API_BASE_URL}/analytic/avg-order-value?${params.toString()}`;
-    
+
     try {
       const response = await fetch(url, {
         method: 'GET',
@@ -968,7 +1299,7 @@ export const api = {
     };
   }> {
     const url = `${API_BASE_URL}/analytic/growth-rate?providerId=${providerId}`;
-    
+
     try {
       const response = await fetch(url, {
         method: 'GET',
@@ -995,7 +1326,7 @@ export const api = {
     newPassword: string
   ): Promise<{ message: string }> {
     const url = `${API_BASE_URL}/profile/update-pass`;
-    
+
     console.log('🔵 [updatePassword] Starting request...');
     console.log('🔵 [updatePassword] URL:', url);
 
@@ -1039,7 +1370,7 @@ export const api = {
     newName: string
   ): Promise<{ message: string; user: User }> {
     const url = `${API_BASE_URL}/profile/update-name`;
-    
+
     console.log('🔵 [updateName] Starting request...');
     console.log('🔵 [updateName] URL:', url);
 
@@ -1087,7 +1418,7 @@ export const api = {
     message: string
   ): Promise<{ message: string }> {
     const url = `${API_BASE_URL}/profile/contact-through-email`;
-    
+
     console.log('🔵 [contactThroughEmail] Starting request...');
     console.log('🔵 [contactThroughEmail] URL:', url);
 

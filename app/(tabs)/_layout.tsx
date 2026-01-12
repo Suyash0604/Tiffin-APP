@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
-  
+
   return (
     <Tabs
       screenOptions={{
@@ -92,7 +92,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="favorites"
         options={{
-          href: null, // Hide this tab from the tab bar
+          href: null,
           title: 'Favorites',
           tabBarIcon: ({ color, focused, size }) => (
             <Ionicons name={focused ? "star" : "star-outline"} size={24} color={color} />
@@ -131,6 +131,13 @@ export default function TabsLayout() {
         name="help"
         options={{
           href: null, // Hide this tab from the tab bar
+        }}
+      />
+      <Tabs.Screen
+        name="providers"
+        options={{
+          href: null,
+          title: 'Providers',
         }}
       />
     </Tabs>

@@ -118,6 +118,55 @@ export default function OrdersScreen() {
     return 'N/A';
   };
 
+  const getStatusColor = (status?: string) => {
+    const statusColors: Record<string, string> = {
+      pending: colors.brand2,
+      approved: colors.accent,
+      rejected: colors.danger,
+      cancelled: colors.danger,
+    };
+    return statusColors[status || 'pending'] || colors.muted;
+  };
+
+  const handleCancelOrder = async (orderId: string) => {
+    try {
+      const user = await getUser();
+      if (!user || !user.id) {
+        Alert.alert('Error', 'User not found');
+        return;
+      }
+
+      Alert.alert(
+        'Cancel Order',
+        'Are you sure you want to cancel this order?',
+        [
+          { text: 'No', style: 'cancel' },
+          {
+            text: 'Yes, Cancel',
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                setLoading(true);
+                await api.cancelOrder(orderId, user.id);
+                Alert.alert('Success', 'Order cancelled successfully');
+                // Reload orders
+                const today = new Date();
+                const todayStr = formatDateForAPI(today);
+                await loadOrders(todayStr, todayStr);
+              } catch (error: any) {
+                Alert.alert('Error', error.message || 'Failed to cancel order');
+              } finally {
+                setLoading(false);
+              }
+            },
+          },
+        ]
+      );
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to cancel order');
+    }
+  };
+
   const toggleOrder = (orderId: string) => {
     setExpandedOrders(prev => {
       const newSet = new Set(prev);
@@ -233,11 +282,29 @@ export default function OrdersScreen() {
                         </Text>
                       </View>
                     </View>
-                    <Ionicons 
-                      name={isExpanded ? 'chevron-up' : 'chevron-down'} 
-                      size={20} 
-                      color={colors.muted} 
-                    />
+                    <View style={styles.headerRight}>
+                      <View
+                        style={[
+                          styles.statusBadge,
+                          { backgroundColor: getStatusColor(order.status) + '20' },
+                        ]}
+                      >
+                        <View style={[styles.statusDot, { backgroundColor: getStatusColor(order.status) }]} />
+                        <Text
+                          style={[
+                            styles.statusText,
+                            { color: getStatusColor(order.status) },
+                          ]}
+                        >
+                          {order.status ? order.status.charAt(0).toUpperCase() + order.status.slice(1) : 'Pending'}
+                        </Text>
+                      </View>
+                      <Ionicons 
+                        name={isExpanded ? 'chevron-up' : 'chevron-down'} 
+                        size={20} 
+                        color={colors.muted} 
+                      />
+                    </View>
                   </TouchableOpacity>
 
                   {isExpanded && (
@@ -303,6 +370,23 @@ export default function OrdersScreen() {
                           <Text style={styles.totalLabel}>Total Amount</Text>
                           <Text style={styles.totalText}>₹{order.grandTotal}</Text>
                         </View>
+                        {order.canCancel && order.status === 'pending' && (
+                          <View style={styles.cancelSection}>
+                            {order.timeRemaining !== undefined && order.timeRemaining > 0 && (
+                              <Text style={styles.timeRemainingText}>
+                                {order.timeRemaining} minute{order.timeRemaining !== 1 ? 's' : ''} remaining to cancel
+                              </Text>
+                            )}
+                            <TouchableOpacity
+                              style={styles.cancelButton}
+                              onPress={() => handleCancelOrder(order._id)}
+                              disabled={loading}
+                            >
+                              <Ionicons name="close-circle" size={18} color={colors.danger} />
+                              <Text style={styles.cancelButtonText}>Cancel Order</Text>
+                            </TouchableOpacity>
+                          </View>
+                        )}
                       </View>
                     </>
                   )}
@@ -636,6 +720,57 @@ const getStyles = (colors: any) => StyleSheet.create({
     fontSize: 22,
     fontWeight: 'bold',
     color: colors.brand,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 22,
+    gap: 6,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 22,
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  cancelSection: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: colors.muted + '30',
+    gap: 8,
+  },
+  timeRemainingText: {
+    fontSize: 12,
+    color: colors.muted,
+    textAlign: 'center',
+  },
+  cancelButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 22,
+    backgroundColor: colors.danger + '15',
+    borderWidth: 1,
+    borderColor: colors.danger + '40',
+  },
+  cancelButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.danger,
   },
   modalOverlay: {
     flex: 1,

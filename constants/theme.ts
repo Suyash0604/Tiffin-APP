@@ -42,7 +42,7 @@ const THEME_STORAGE_KEY = 'app_theme';
 const getAPIBaseURL = () => {
   // Temporarily force production URL for testing
   // return 'https://tiffin-backend-zo3a.onrender.com';
-  return 'http://192.168.1.7:3000';
+  return 'http://192.168.1.4:3000';
   // Original code...
 };
 

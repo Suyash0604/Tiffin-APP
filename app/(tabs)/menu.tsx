@@ -1,23 +1,25 @@
 import { useTheme } from '@/contexts/ThemeContext';
 import { api, getUser, Menu } from '@/utils/api';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    Alert,
-    Image,
-    Modal,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  Image,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function MenuScreen() {
   const { colors } = useTheme();
   const styles = getStyles(colors);
+  const params = useLocalSearchParams();
+  const providerIdFilter = params.providerId as string;
   const [menus, setMenus] = useState<Menu[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedMenu, setSelectedMenu] = useState<Menu | null>(null);
@@ -52,56 +54,66 @@ export default function MenuScreen() {
     try {
       const response = await api.getMenus();
       console.log('📦 [loadMenus] Response received:', { count: response.count, menusLength: response.menus?.length });
-      
+
       // Ensure menus array exists
       if (!response.menus || !Array.isArray(response.menus)) {
         console.warn('⚠️ [loadMenus] menus array is missing or invalid');
         setMenus([]);
         return;
       }
-      
+
       // Filter menus - show only today's date menu
       // Use UTC dates to avoid timezone issues
       const today = new Date();
       const todayUTC = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
       const tomorrowUTC = new Date(todayUTC);
       tomorrowUTC.setUTCDate(tomorrowUTC.getUTCDate() + 1);
-      
+
       console.log('📅 [loadMenus] Date filter - Today (UTC):', todayUTC.toISOString());
-      
+
       const availableMenus = response.menus.filter((menu) => {
         if (!menu || !menu.date) {
           console.warn('⚠️ [loadMenus] Invalid menu item:', menu);
           return false;
         }
-        
+
         // Check if menu is active (if isActive field exists)
         if (menu.hasOwnProperty('isActive') && !menu.isActive) {
           console.log('⏭️ [loadMenus] Menu filtered out (not active):', menu._id);
           return false;
         }
-        
+
         // Check if menu is deleted
         if (menu.deletedAt) {
           console.log('⏭️ [loadMenus] Menu filtered out (deleted):', menu._id);
           return false;
         }
-        
+
         // Parse menu date and extract just the date part (YYYY-MM-DD) to avoid timezone issues
         const menuDateStr = menu.date.split('T')[0]; // Get YYYY-MM-DD part
         const [year, month, day] = menuDateStr.split('-').map(Number);
         const menuDateUTC = new Date(Date.UTC(year, month - 1, day));
-        
+
         // Show only today's menu (menu date must be today)
         const isToday = menuDateUTC >= todayUTC && menuDateUTC < tomorrowUTC;
-        
+
         console.log(`📅 [loadMenus] Menu ${menu._id} - Date string: ${menuDateStr}, Date (UTC): ${menuDateUTC.toISOString()}, Is today: ${isToday}`);
-        
+
         return isToday;
       });
-      
-      console.log('✅ [loadMenus] Available menus after filtering:', availableMenus.length);
-      setMenus(availableMenus);
+
+
+
+      // Filter by provider if providerId param is present
+      const finalMenus = providerIdFilter
+        ? availableMenus.filter(menu => {
+          const pId = typeof menu.providerId === 'object' ? (menu.providerId as any)._id : menu.providerId;
+          return pId === providerIdFilter;
+        })
+        : availableMenus;
+
+      console.log('✅ [loadMenus] Available menus after filtering:', finalMenus.length);
+      setMenus(finalMenus);
     } catch (error: any) {
       console.error('Error loading menus:', error);
       if (error.message && !error.message.includes('Server error')) {
@@ -119,7 +131,7 @@ export default function MenuScreen() {
       Alert.alert('Error', 'This menu has no sabjis available');
       return;
     }
-    
+
     setSelectedMenu(menu);
     setOrderItems([{
       mealType: 'full',
@@ -148,7 +160,7 @@ export default function MenuScreen() {
   const handleOrderItemChange = (index: number, field: string, value: any) => {
     const newItems = [...orderItems];
     newItems[index] = { ...newItems[index], [field]: value };
-    
+
     // If meal type changes to riceOnly, clear sabji
     if (field === 'mealType' && value === 'riceOnly') {
       delete newItems[index].sabji;
@@ -157,7 +169,7 @@ export default function MenuScreen() {
     if (field === 'mealType' && value !== 'riceOnly' && !newItems[index].sabji && selectedMenu) {
       newItems[index].sabji = selectedMenu.sabjis[0];
     }
-    
+
     setOrderItems(newItems);
   };
 
@@ -205,12 +217,12 @@ export default function MenuScreen() {
           mealType: item.mealType,
           quantity: item.quantity,
         };
-        
+
         // Only include sabji if meal type is not riceOnly
         if (item.mealType !== 'riceOnly' && item.sabji) {
           formattedItem.sabji = item.sabji;
         }
-        
+
         return formattedItem;
       });
 
@@ -259,8 +271,8 @@ export default function MenuScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Image 
-            source={require('@/assets/images/logo3.png')} 
+          <Image
+            source={require('@/assets/images/logo3.png')}
             style={styles.headerLogo}
             resizeMode="contain"
           />

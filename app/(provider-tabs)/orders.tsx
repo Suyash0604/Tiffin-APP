@@ -61,49 +61,85 @@ export default function ProviderOrdersScreen() {
   };
 
 
-  const handleStatusChange = (orderId: string, newStatus: string) => {
-    Alert.alert(
-      'Change Status',
-      `Change order status to ${newStatus}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Confirm',
-          onPress: () => {
-            // TODO: Call API to update order status
-            setOrders(orders.map(order =>
-              order._id === orderId ? { ...order, status: newStatus } : order
-            ));
-            Alert.alert('Success', 'Order status updated');
+  const handleApproveOrder = async (orderId: string) => {
+    try {
+      const user = await getUser();
+      if (!user || !user.id) {
+        Alert.alert('Error', 'Provider not found');
+        return;
+      }
+
+      Alert.alert(
+        'Approve Order',
+        'Are you sure you want to approve this order?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Approve',
+            onPress: async () => {
+              try {
+                setLoading(true);
+                await api.approveOrder(orderId, user.id);
+                Alert.alert('Success', 'Order approved successfully');
+                await loadOrders();
+              } catch (error: any) {
+                Alert.alert('Error', error.message || 'Failed to approve order');
+              } finally {
+                setLoading(false);
+              }
+            },
           },
-        },
-      ]
-    );
+        ]
+      );
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to approve order');
+    }
+  };
+
+  const handleRejectOrder = async (orderId: string) => {
+    try {
+      const user = await getUser();
+      if (!user || !user.id) {
+        Alert.alert('Error', 'Provider not found');
+        return;
+      }
+
+      Alert.alert(
+        'Reject Order',
+        'Are you sure you want to reject this order?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Reject',
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                setLoading(true);
+                await api.rejectOrder(orderId, user.id);
+                Alert.alert('Success', 'Order rejected successfully');
+                await loadOrders();
+              } catch (error: any) {
+                Alert.alert('Error', error.message || 'Failed to reject order');
+              } finally {
+                setLoading(false);
+              }
+            },
+          },
+        ]
+      );
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to reject order');
+    }
   };
 
   const getStatusColor = (status?: string) => {
     const statusColors: Record<string, string> = {
       pending: colors.brand2,
-      confirmed: colors.accent,
-      preparing: colors.brand,
-      ready: '#2196F3',
-      delivered: colors.accent,
+      approved: colors.accent,
+      rejected: colors.danger,
       cancelled: colors.danger,
     };
     return statusColors[status || 'pending'] || colors.muted;
-  };
-
-
-  const getNextStatus = (currentStatus?: string): string | null => {
-    const statusFlow: Record<string, string | null> = {
-      pending: 'confirmed',
-      confirmed: 'preparing',
-      preparing: 'ready',
-      ready: 'delivered',
-      delivered: null,
-      cancelled: null,
-    };
-    return statusFlow[currentStatus || 'pending'] || null;
   };
 
   const getCustomerName = (order: Order) => {
@@ -255,9 +291,9 @@ export default function ProviderOrdersScreen() {
         ) : (
           <View style={styles.ordersList}>
             {orders.map((order) => {
-              const nextStatus = getNextStatus(order.status);
               const currentStatus = order.status || 'pending';
               const isExpanded = expandedOrders.has(order._id);
+              const canApproveReject = currentStatus === 'pending';
               return (
                 <View key={order._id} style={styles.orderCard}>
                   <TouchableOpacity 
@@ -375,28 +411,26 @@ export default function ProviderOrdersScreen() {
                           <Text style={styles.totalLabel}>Total Amount</Text>
                           <Text style={styles.totalText}>₹{order.grandTotal}</Text>
                         </View>
-                        <View style={styles.actionButtons}>
-                          {nextStatus && currentStatus !== 'cancelled' && (
+                        {canApproveReject && (
+                          <View style={styles.actionButtons}>
                             <TouchableOpacity
-                              style={styles.updateButton}
-                              onPress={() => handleStatusChange(order._id, nextStatus)}
+                              style={styles.approveButton}
+                              onPress={() => handleApproveOrder(order._id)}
+                              disabled={loading}
                             >
                               <Ionicons name="checkmark-circle" size={18} color={colors.surface} />
-                              <Text style={styles.updateButtonText}>
-                                {nextStatus.charAt(0).toUpperCase() + nextStatus.slice(1)}
-                              </Text>
+                              <Text style={styles.approveButtonText}>Approve</Text>
                             </TouchableOpacity>
-                          )}
-                          {currentStatus === 'pending' && (
                             <TouchableOpacity
-                              style={styles.cancelButton}
-                              onPress={() => handleStatusChange(order._id, 'cancelled')}
+                              style={styles.rejectButton}
+                              onPress={() => handleRejectOrder(order._id)}
+                              disabled={loading}
                             >
                               <Ionicons name="close-circle" size={18} color={colors.danger} />
-                              <Text style={styles.cancelButtonText}>Cancel</Text>
+                              <Text style={styles.rejectButtonText}>Reject</Text>
                             </TouchableOpacity>
-                          )}
-                        </View>
+                          </View>
+                        )}
                       </View>
                     </>
                   )}
@@ -777,25 +811,26 @@ const getStyles = (colors: any) => StyleSheet.create({
     flexDirection: 'row',
     gap: 10,
     flexWrap: 'wrap',
+    marginTop: 12,
   },
-  updateButton: {
+  approveButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 22,
-    backgroundColor: colors.brand,
+    backgroundColor: colors.accent,
     flex: 1,
     minWidth: 120,
     justifyContent: 'center',
   },
-  updateButtonText: {
+  approveButtonText: {
     fontSize: 14,
     fontWeight: '600',
     color: colors.surface,
   },
-  cancelButton: {
+  rejectButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
@@ -809,7 +844,7 @@ const getStyles = (colors: any) => StyleSheet.create({
     minWidth: 120,
     justifyContent: 'center',
   },
-  cancelButtonText: {
+  rejectButtonText: {
     fontSize: 14,
     fontWeight: '600',
     color: colors.danger,
